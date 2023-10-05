@@ -1,4 +1,5 @@
 import { LocomotiveScrollProvider } from "react-locomotive-scroll";
+import AnimatedCursor from "react-animated-cursor";
 import { Image } from "./Image";
 import { useRef } from "react";
 
@@ -120,24 +121,27 @@ const App = () => {
     "_vickson_",
   ];
   return (
-    <LocomotiveScrollProvider options={options} containerRef={ref}>
-      <main data-scroll-container ref={ref}>
-        <div className="flex flex-col lg:flex-row max-w-[100vw]">
-          <div className="flex-1">
-            {artists.map(
-              (artiste, index) =>
-                index % 2 === 0 && <Image key={index} artist={artiste} />
-            )}
+    <>
+      <AnimatedCursor />
+      <LocomotiveScrollProvider options={options} containerRef={ref}>
+        <main data-scroll-container ref={ref}>
+          <div className="flex flex-col lg:flex-row max-w-[100vw]">
+            <div className="flex-1">
+              {artists.map(
+                (artiste, index) =>
+                  index % 2 === 0 && <Image key={index} artist={artiste} />
+              )}
+            </div>
+            <div className="flex-1">
+              {artists.map(
+                (artiste, index) =>
+                  index % 2 !== 0 && <Image key={index} artist={artiste} />
+              )}
+            </div>
           </div>
-          <div className="flex-1">
-            {artists.map(
-              (artiste, index) =>
-                index % 2 !== 0 && <Image key={index} artist={artiste} />
-            )}
-          </div>
-        </div>
-      </main>
-    </LocomotiveScrollProvider>
+        </main>
+      </LocomotiveScrollProvider>
+    </>
   );
 };
 
