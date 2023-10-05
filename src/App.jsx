@@ -16,6 +16,39 @@ const App = () => {
     },
   };
   const artists = [
+    "AnthonyAzekwoh2",
+    "AnthonyAzekwoh",
+
+    "aok_vii",
+    "Arclighttt",
+    "arrestingyellow",
+
+    "ChukwuAdaeze",
+    "chukwuadaeze_",
+    "bad_oats",
+    "bolusowoolu",
+    "castroadefisayo",
+    "ChidimmaNwafor_",
+    "akachinonyerem_",
+    "Akanevans13",
+    "AkpomedayeT",
+    "Anjoladave",
+    "Anny_Inferno",
+    "ArtObosa_",
+    "artofnuel",
+    "art_by_jacinta",
+    "Asamaiige",
+    "avatarbmb",
+
+    "Chiebuniem_",
+    "ChigozieObi_",
+    "ChisaLinto",
+    "ayoguofficial",
+
+    "Delkrapht",
+    "deoluphotograph",
+    "Desss_chiiii",
+    "drealstephen",
     "011FO110",
     "1Segun1",
     "24kstxxz",
@@ -23,35 +56,6 @@ const App = () => {
     "AdjoaFaakye",
     "Adxnna",
     "afrogodd",
-    "akachinonyerem_",
-    "Akanevans13",
-    "AkpomedayeT",
-    "Anjoladave",
-    "Anny_Inferno",
-    "AnthonyAzekwoh",
-    "AnthonyAzekwoh2",
-    "aok_vii",
-    "Arclighttt",
-    "arrestingyellow",
-    "ArtObosa_",
-    "artofnuel",
-    "art_by_jacinta",
-    "Asamaiige",
-    "avatarbmb",
-    "ayoguofficial",
-    "bad_oats",
-    "bolusowoolu",
-    "castroadefisayo",
-    "ChidimmaNwafor_",
-    "Chiebuniem_",
-    "ChigozieObi_",
-    "ChisaLinto",
-    "ChukwuAdaeze",
-    "chukwuadaeze_",
-    "Delkrapht",
-    "deoluphotograph",
-    "Desss_chiiii",
-    "drealstephen",
     "dumsurfer88",
     "F7nOswRWgAA3IoQ",
     "F7ohRnoXMAAvJsG",
@@ -118,6 +122,9 @@ const App = () => {
   return (
     <LocomotiveScrollProvider options={options} containerRef={ref}>
       <main data-scroll-container ref={ref}>
+        <header className="text-[5rem] text-white font-mono">
+          nigerian artistes
+        </header>
         <div className="flex flex-col lg:flex-row max-w-[100vw]">
           <div className="flex-1">
             {artists.map(
