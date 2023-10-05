@@ -1,10 +1,6 @@
-import { useRef } from "react";
-import { LocomotiveScrollProvider } from "react-locomotive-scroll";
 import { Image } from "./Image";
-// import { Image } from "./Image";
-const App = () => {
-  const containerRef = useRef(null);
 
+const App = () => {
   const artists = [
     "011FO110",
     "1Segun1",
@@ -106,51 +102,20 @@ const App = () => {
     "_vickson_",
   ];
   return (
-    <LocomotiveScrollProvider
-      options={{
-        inertia: 0.8,
-        smooth: true,
-        getDirection: true,
-        mobile: {
-          inertia: 0.8,
-          smooth: true,
-          getDirection: true,
-        },
-        tablet: {
-          inertia: 0.8,
-          smooth: true,
-          getDirection: true,
-        },
-      }}
-      watch={
-        [
-          //..all the dependencies you want to watch to update the scroll.
-          //  Basicaly, you would want to watch page/location changes
-          //  For exemple, on Next.js you would want to watch properties like `router.asPath` (you may want to add more criterias if the instance should be update on locations with query parameters)
-        ]
-      }
-      containerRef={containerRef}
-    >
-      <main data-scroll-container ref={containerRef}>
-        <div
-          data-scroll-section
-          className="flex flex-col lg:flex-row max-w-[100vw]"
-        >
-          <div className="flex-1">
-            {artists.map(
-              (artiste, index) =>
-                index % 2 && <Image key={index} artist={artiste} />
-            )}
-          </div>{" "}
-          <div className="flex-1">
-            {artists.map(
-              (artiste, index) =>
-                index / 2 === 0 && <Image key={index} artist={artiste} />
-            )}
-          </div>
-        </div>
-      </main>
-    </LocomotiveScrollProvider>
+    <div className="flex flex-col lg:flex-row max-w-[100vw]">
+      <div className="flex-1">
+        {artists.map(
+          (artiste, index) =>
+            index % 2 === 0 && <Image key={index} artist={artiste} />
+        )}
+      </div>
+      <div className="flex-1">
+        {artists.map(
+          (artiste, index) =>
+            index % 2 !== 0 && <Image key={index} artist={artiste} />
+        )}
+      </div>
+    </div>
   );
 };
 
