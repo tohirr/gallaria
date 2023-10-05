@@ -1,9 +1,110 @@
 import { useRef } from "react";
 import { LocomotiveScrollProvider } from "react-locomotive-scroll";
+import { Image } from "./Image";
 // import { Image } from "./Image";
 const App = () => {
   const containerRef = useRef(null);
 
+  const artists = [
+    "011FO110",
+    "1Segun1",
+    "24kstxxz",
+    "9GreenRats",
+    "AdjoaFaakye",
+    "Adxnna",
+    "afrogodd",
+    "akachinonyerem_",
+    "Akanevans13",
+    "AkpomedayeT",
+    "Anjoladave",
+    "Anny_Inferno",
+    "AnthonyAzekwoh",
+    "AnthonyAzekwoh2",
+    "aok_vii",
+    "Arclighttt",
+    "arrestingyellow",
+    "ArtObosa_",
+    "artofnuel",
+    "art_by_jacinta",
+    "Asamaiige",
+    "avatarbmb",
+    "ayoguofficial",
+    "bad_oats",
+    "bolusowoolu",
+    "castroadefisayo",
+    "ChidimmaNwafor_",
+    "Chiebuniem_",
+    "ChigozieObi_",
+    "ChisaLinto",
+    "ChukwuAdaeze",
+    "chukwuadaeze_",
+    "Delkrapht",
+    "deoluphotograph",
+    "Desss_chiiii",
+    "drealstephen",
+    "dumsurfer88",
+    "F7nOswRWgAA3IoQ",
+    "F7ohRnoXMAAvJsG",
+    "fadeadefolalu",
+    "fatileee",
+    "freddiejacobart",
+    "fuckinghelloyin",
+    "gangster__B",
+    "grizzygrae",
+    "huesofgigi",
+    "iamrenike",
+    "iamrenike2",
+    "idrisanjola",
+    "imanie",
+    "imit0r",
+    "Im_Aishat",
+    "Isiomah2",
+    "Jekeinism",
+    "jisticslawal",
+    "khay_szn",
+    "kosithecreator",
+    "kunle_paints",
+    "Looooohiiiii",
+    "Lucynder_",
+    "LUDA_JOSH",
+    "mallyxl",
+    "miprox_",
+    "mister_gamal",
+    "moboxx___",
+    "Mohd_Sodq",
+    "NengusArts",
+    "NenjiKami",
+    "nkfrom04",
+    "obohdraws",
+    "OhabTBJ",
+    "OlaAgunbiade",
+    "olaoluart",
+    "Olutoyosi_",
+    "Omoteniola_",
+    "Powellgraham5",
+    "Prescribed_FOB",
+    "Romigenic",
+    "SamuelOlowomeye",
+    "slimmwrites",
+    "Strixme",
+    "Strixme_2",
+    "theartist_Nicol",
+    "therisinggemini",
+    "the_Kingtesh",
+    "TOBYDPHOTOGRAPH",
+    "Tolu__c",
+    "UfotUbon",
+    "ukay_gold",
+    "umiamara",
+    "Xeunbadejo",
+    "Yinkore_",
+    "zomvilien",
+    "_AdewaleMayowa",
+    "_Dvrmvc",
+    "_eunice_ukamaka",
+    "_taiwolasisi",
+    "_vickson_",
+  ];
   return (
     <LocomotiveScrollProvider
       options={{
@@ -36,153 +137,16 @@ const App = () => {
           className="flex flex-col lg:flex-row max-w-[100vw]"
         >
           <div className="flex-1">
-            <div className="">
-              <img
-                className="object-cover"
-                src="/assets/images/011FO110.jpg"
-                alt=""
-              />
-            </div>
-            <div className="">
-              <img
-                className="object-cover"
-                src="/assets/images/Xeunbadejo.jpg"
-                alt=""
-              />
-            </div>
-            <img
-              className="object-cover"
-              src="/assets/images/1Segun1.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover "
-              src="/assets/images/_eunice_ukamaka.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover"
-              src="/assets/images/NenjiKami.jpg"
-              alt=""
-            />
-            <div className="overflow-hidden flex items-center justify-center">
-              <img
-                data-scroll
-                data-scroll-class="scale-100 transition-transform duration-4000"
-                data-scroll-repeat="true"
-                className="object-cover scale-150 "
-                src="/assets/images/mallyxl.jpg"
-                alt=""
-              />
-            </div>
-
-            <img
-              className="object-cover"
-              src="/assets/images/zomvilien.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover"
-              src="/assets/images/9GreenRats.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover"
-              src="/assets/images/TOBYDPHOTOGRAPH.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover"
-              src="/assets/images/Strixme_2.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover"
-              src="/assets/images/Powellgraham5.jpg"
-              alt=""
-            />
-          </div>
+            {artists.map(
+              (artiste, index) =>
+                index % 2 && <Image key={index} artist={artiste} />
+            )}
+          </div>{" "}
           <div className="flex-1">
-            <img
-              className="object-cover "
-              src="/assets/images/_AdewaleMayowas.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover"
-              src="/assets/images/jisticslawal.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover "
-              src="/assets/images/_AdewaleMayowa.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover "
-              src="/assets/images/Anny_Inferno.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover "
-              src="/assets/images/Anjoladave.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover "
-              src="/assets/images/AkpomedayeT.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover "
-              src="/assets/images/Akanevans13.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover "
-              src="/assets/images/Adxnna.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover "
-              src="/assets/images/AdjoaFaakye.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover "
-              src="/assets/images/arrestingyellow.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover "
-              src="/assets/images/AnthonyAzekwoh.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover"
-              src="/assets/images/afrogodd.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover"
-              src="/assets/images/UfotUbon.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover"
-              src="/assets/images/therisinggemini.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover"
-              src="/assets/images/the_Kingtesh.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover"
-              src="/assets/images/_vickson_.jpg"
-              alt=""
-            />
+            {artists.map(
+              (artiste, index) =>
+                index / 2 === 0 && <Image key={index} artist={artiste} />
+            )}
           </div>
         </div>
       </main>
