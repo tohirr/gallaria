@@ -122,9 +122,6 @@ const App = () => {
   return (
     <LocomotiveScrollProvider options={options} containerRef={ref}>
       <main data-scroll-container ref={ref}>
-        <header className="text-[5rem] text-white font-mono">
-          nigerian artistes
-        </header>
         <div className="flex flex-col lg:flex-row max-w-[100vw]">
           <div className="flex-1">
             {artists.map(
