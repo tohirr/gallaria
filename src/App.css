@@ -1,0 +1,72 @@
+.masonry {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(250px, 1fr)
+  ); /* Adjust column width as needed */
+  gap: 20px; /* Adjust the gap between items */
+}
+
+.item {
+  margin-bottom: 20px; /* Add spacing between items vertically */
+}
+
+/* .swiper {
+  width: 100%;
+  height: 50vh;
+  padding-top: 50px;
+  padding-bottom: 50px;
+}
+
+.swiper-slide {
+  background-position: center;
+  background-size: cover;
+  width: 300px;
+  height: 300px;
+}
+
+.swiper-slide img {
+  display: block;
+  width: 100%;
+}
+.swiper_container {
+  height: 52rem;
+  padding: 2rem 0;
+  position: relative;
+} */
+
+.swiper_container {
+  height: 52rem;
+  padding: 2rem 0;
+  position: relative;
+}
+
+.swiper-slide {
+  width: 25rem;
+  height: 35rem;
+  position: relative;
+}
+
+.container {
+  display: grid;
+  width: 80vw;
+
+  /* fit as many columns as possible, 180px wide each: */
+  grid-template-columns: repeat(auto-fill, 250px);
+  /* each row is 20px high -- we always span 2+ */
+  grid-auto-rows: 10px;
+  justify-content: center;
+}
+.card {
+  margin: 15px 10px;
+  padding: 0;
+}
+.small {
+  grid-row-end: span 20;
+}
+.medium {
+  grid-row-end: span 33;
+}
+.large {
+  grid-row-end: span 45;
+}
