@@ -35,12 +35,7 @@ const App = () => {
           data-scroll-section
           className="flex flex-col lg:flex-row max-w-[100vw]"
         >
-          <div
-            data-scroll
-            data-scroll-speed="1"
-            data-scroll-section
-            className="flex-1"
-          >
+          <div className="flex-1">
             <div className="">
               <img
                 className="object-cover"
@@ -48,16 +43,10 @@ const App = () => {
                 alt=""
               />
             </div>
-            <div
-              data-scroll
-              data-scroll-speed="4"
-              data-scroll-section
-              className=""
-            >
-              {" "}
+            <div className="">
               <img
                 className="object-cover"
-                src="/assets/images/9GreenRats.jpg"
+                src="/assets/images/Xeunbadejo.jpg"
                 alt=""
               />
             </div>
@@ -65,7 +54,7 @@ const App = () => {
               className="object-cover"
               src="/assets/images/1Segun1.jpg"
               alt=""
-            />{" "}
+            />
             <img
               className="object-cover "
               src="/assets/images/_eunice_ukamaka.jpg"
@@ -76,11 +65,17 @@ const App = () => {
               src="/assets/images/NenjiKami.jpg"
               alt=""
             />
-            <img
-              className="object-cover"
-              src="/assets/images/mallyxl.jpg"
-              alt=""
-            />
+            <div className="overflow-hidden flex items-center justify-center">
+              <img
+                data-scroll
+                data-scroll-class="scale-100 transition-transform duration-4000"
+                data-scroll-repeat="true"
+                className="object-cover scale-150 "
+                src="/assets/images/mallyxl.jpg"
+                alt=""
+              />
+            </div>
+
             <img
               className="object-cover"
               src="/assets/images/zomvilien.jpg"
@@ -88,7 +83,7 @@ const App = () => {
             />
             <img
               className="object-cover"
-              src="/assets/images/Xeunbadejo.jpg"
+              src="/assets/images/9GreenRats.jpg"
               alt=""
             />
             <img
@@ -112,47 +107,47 @@ const App = () => {
               className="object-cover "
               src="/assets/images/_AdewaleMayowas.jpg"
               alt=""
-            />{" "}
+            />
             <img
               className="object-cover"
               src="/assets/images/jisticslawal.jpg"
               alt=""
-            />{" "}
+            />
             <img
               className="object-cover "
               src="/assets/images/_AdewaleMayowa.jpg"
               alt=""
-            />{" "}
+            />
             <img
               className="object-cover "
               src="/assets/images/Anny_Inferno.jpg"
               alt=""
-            />{" "}
+            />
             <img
               className="object-cover "
               src="/assets/images/Anjoladave.jpg"
               alt=""
-            />{" "}
+            />
             <img
               className="object-cover "
               src="/assets/images/AkpomedayeT.jpg"
               alt=""
-            />{" "}
+            />
             <img
               className="object-cover "
               src="/assets/images/Akanevans13.jpg"
               alt=""
-            />{" "}
+            />
             <img
               className="object-cover "
               src="/assets/images/Adxnna.jpg"
               alt=""
-            />{" "}
+            />
             <img
               className="object-cover "
               src="/assets/images/AdjoaFaakye.jpg"
               alt=""
-            />{" "}
+            />
             <img
               className="object-cover "
               src="/assets/images/arrestingyellow.jpg"
