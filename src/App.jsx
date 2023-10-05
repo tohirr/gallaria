@@ -1,6 +1,20 @@
+import { LocomotiveScrollProvider } from "react-locomotive-scroll";
 import { Image } from "./Image";
+import { useRef } from "react";
 
 const App = () => {
+  const ref = useRef(null);
+
+  const options = {
+    smooth: true,
+    inertia: 0.9,
+    mobile: {
+      smooth: true,
+    },
+    tablet: {
+      smooth: true,
+    },
+  };
   const artists = [
     "011FO110",
     "1Segun1",
@@ -102,20 +116,24 @@ const App = () => {
     "_vickson_",
   ];
   return (
-    <div className="flex flex-col lg:flex-row max-w-[100vw]">
-      <div className="flex-1">
-        {artists.map(
-          (artiste, index) =>
-            index % 2 === 0 && <Image key={index} artist={artiste} />
-        )}
-      </div>
-      <div className="flex-1">
-        {artists.map(
-          (artiste, index) =>
-            index % 2 !== 0 && <Image key={index} artist={artiste} />
-        )}
-      </div>
-    </div>
+    <LocomotiveScrollProvider options={options} containerRef={ref}>
+      <main data-scroll-container ref={ref}>
+        <div className="flex flex-col lg:flex-row max-w-[100vw]">
+          <div className="flex-1">
+            {artists.map(
+              (artiste, index) =>
+                index % 2 === 0 && <Image key={index} artist={artiste} />
+            )}
+          </div>
+          <div className="flex-1">
+            {artists.map(
+              (artiste, index) =>
+                index % 2 !== 0 && <Image key={index} artist={artiste} />
+            )}
+          </div>
+        </div>
+      </main>
+    </LocomotiveScrollProvider>
   );
 };
 

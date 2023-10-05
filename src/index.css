@@ -80,5 +80,5 @@ body {
 .fadeIn {
   opacity: 1;
   transform: scale(1.1);
-  transition: opacity 1s, transform 1s;
+  transition: opacity 1s ease-in, transform 1s ease-in;
 }

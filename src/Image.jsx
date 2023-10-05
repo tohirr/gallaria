@@ -1,9 +1,11 @@
 /* eslint-disable react/prop-types */
 export const Image = ({ artist }) => {
   return (
-    <div className="overflow-hidden flex items-center justify-center sticky top-0">
+    <div className="overflow-hidden flex items-center justify-center">
       <img
-        className="object-cover"
+        data-scroll
+        data-scroll-class="fadeIn"
+        className="object-cover opacity-40 scale-100"
         src={`/assets/images/${artist}.jpg`}
         alt=""
       />
