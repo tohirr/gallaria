@@ -6,8 +6,19 @@ const App = () => {
   return (
     <LocomotiveScrollProvider
       options={{
+        inertia: 0.8,
         smooth: true,
-        // ... all available Locomotive Scroll instance options
+        getDirection: true,
+        mobile: {
+          inertia: 0.8,
+          smooth: true,
+          getDirection: true,
+        },
+        tablet: {
+          inertia: 0.8,
+          smooth: true,
+          getDirection: true,
+        },
       }}
       watch={
         [
