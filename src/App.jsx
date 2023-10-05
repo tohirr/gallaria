@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { LocomotiveScrollProvider } from "react-locomotive-scroll";
+// import { Image } from "./Image";
 const App = () => {
   const containerRef = useRef(null);
 
@@ -34,22 +35,32 @@ const App = () => {
           data-scroll-section
           className="flex flex-col lg:flex-row max-w-[100vw]"
         >
-          <div className="flex-1">
-            <img
-              className="object-cover"
-              src="/assets/images/24kstxxz.jpg"
-              alt=""
-            />
-            <img
-              className="object-cover"
-              src="/assets/images/011FO110.jpg"
-              alt=""
-            />{" "}
-            <img
-              className="object-cover"
-              src="/assets/images/9GreenRats.jpg"
-              alt=""
-            />{" "}
+          <div
+            data-scroll
+            data-scroll-speed="1"
+            data-scroll-section
+            className="flex-1"
+          >
+            <div className="">
+              <img
+                className="object-cover"
+                src="/assets/images/011FO110.jpg"
+                alt=""
+              />
+            </div>
+            <div
+              data-scroll
+              data-scroll-speed="4"
+              data-scroll-section
+              className=""
+            >
+              {" "}
+              <img
+                className="object-cover"
+                src="/assets/images/9GreenRats.jpg"
+                alt=""
+              />
+            </div>
             <img
               className="object-cover"
               src="/assets/images/1Segun1.jpg"
