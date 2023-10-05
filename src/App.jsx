@@ -8,12 +8,31 @@ const App = () => {
           alt=""
         />
         <img
+          className="object-cover "
+          src="/assets/images/011FO110.jpg"
+          alt=""
+        />{" "}
+        <img
+          className="object-cover "
+          src="/assets/images/9GreenRats.jpg"
+          alt=""
+        />{" "}
+        <img
+          className="object-cover "
+          src="/assets/images/1Segun1.jpg"
+          alt=""
+        />{" "}
+        <img
+          className="object-cover "
+          src="/assets/images/_eunice_ukamaka.jpg"
+          alt=""
+        />
+        <img
           className="object-cover"
           src="/assets/images/NenjiKami.jpg"
           alt=""
         />
         <img className="object-cover" src="/assets/images/mallyxl.jpg" alt="" />
-
         <img
           className="object-cover"
           src="/assets/images/zomvilien.jpg"
@@ -42,8 +61,44 @@ const App = () => {
       </div>
       <div className="flex-1">
         <img
+          className="object-cover "
+          src="/assets/images/_AdewaleMayowas.jpg"
+          alt=""
+        />{" "}
+        <img
           className="object-cover"
           src="/assets/images/jisticslawal.jpg"
+          alt=""
+        />{" "}
+        <img
+          className="object-cover "
+          src="/assets/images/_AdewaleMayowa.jpg"
+          alt=""
+        />{" "}
+        <img
+          className="object-cover "
+          src="/assets/images/Anny_Inferno.jpg"
+          alt=""
+        />{" "}
+        <img
+          className="object-cover "
+          src="/assets/images/Anjoladave.jpg"
+          alt=""
+        />{" "}
+        <img
+          className="object-cover "
+          src="/assets/images/AkpomedayeT.jpg"
+          alt=""
+        />{" "}
+        <img
+          className="object-cover "
+          src="/assets/images/Akanevans13.jpg"
+          alt=""
+        />{" "}
+        <img className="object-cover " src="/assets/images/Adxnna.jpg" alt="" />{" "}
+        <img
+          className="object-cover "
+          src="/assets/images/AdjoaFaakye.jpg"
           alt=""
         />{" "}
         <img
