@@ -1,6 +1,6 @@
 const App = () => {
   return (
-    <div className="flex max-w-[100vw]">
+    <div className="flex flex-col lg:flex-row max-w-[100vw]">
       <div className="flex-1">
         <img
           className="object-cover "
