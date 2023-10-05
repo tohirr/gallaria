@@ -25,22 +25,22 @@ const App = () => {
         >
           <div className="flex-1">
             <img
-              className="object-cover sticky top-0"
+              className="object-cover"
               src="/assets/images/24kstxxz.jpg"
               alt=""
             />
             <img
-              className="object-cover sticky top-0"
+              className="object-cover"
               src="/assets/images/011FO110.jpg"
               alt=""
             />{" "}
             <img
-              className="object-cover sticky top-0"
+              className="object-cover"
               src="/assets/images/9GreenRats.jpg"
               alt=""
             />{" "}
             <img
-              className="object-cover sticky top-0"
+              className="object-cover"
               src="/assets/images/1Segun1.jpg"
               alt=""
             />{" "}
