@@ -2,9 +2,21 @@ import { LocomotiveScrollProvider } from "react-locomotive-scroll";
 import AnimatedCursor from "react-animated-cursor";
 import { Image } from "./Image";
 import { useRef } from "react";
+import { useState } from "react";
+import { useEffect } from "react";
+import Loader from "./LoadIn";
 
 const App = () => {
   const ref = useRef(null);
+  const [loadingComplete, setLoadingComplete] = useState(false);
+
+  useEffect(() => {
+    // Simulate an asynchronous loading process (e.g., fetching data) here.
+    // Once loading is complete, set setLoadingComplete to true.
+    setTimeout(() => {
+      setLoadingComplete(true);
+    }, 4700); // Simulate loading for 3 seconds (adjust as needed).
+  }, []);
 
   const options = {
     smooth: true,
@@ -123,24 +135,30 @@ const App = () => {
   return (
     <>
       <AnimatedCursor />
-      <LocomotiveScrollProvider options={options} containerRef={ref}>
-        <main data-scroll-container ref={ref}>
-          <div className="flex flex-col lg:flex-row max-w-[100vw]">
-            <div className="flex-1">
-              {artists.map(
-                (artiste, index) =>
-                  index % 2 === 0 && <Image key={index} artist={artiste} />
-              )}
+      {loadingComplete ? (
+        // Render your home page component when loading is complete.
+        <LocomotiveScrollProvider options={options} containerRef={ref}>
+          <main data-scroll-container ref={ref}>
+            <div className="flex flex-col lg:flex-row max-w-[100vw]">
+              <div className="flex-1">
+                {artists.map(
+                  (artiste, index) =>
+                    index % 2 === 0 && <Image key={index} artist={artiste} />
+                )}
+              </div>
+              <div className="flex-1">
+                {artists.map(
+                  (artiste, index) =>
+                    index % 2 !== 0 && <Image key={index} artist={artiste} />
+                )}
+              </div>
             </div>
-            <div className="flex-1">
-              {artists.map(
-                (artiste, index) =>
-                  index % 2 !== 0 && <Image key={index} artist={artiste} />
-              )}
-            </div>
-          </div>
-        </main>
-      </LocomotiveScrollProvider>
+          </main>
+        </LocomotiveScrollProvider>
+      ) : (
+        // Render the Loader component while loading is in progress.
+        <Loader />
+      )}
     </>
   );
 };
