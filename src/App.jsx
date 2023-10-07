@@ -15,7 +15,7 @@ const App = () => {
     // Once loading is complete, set setLoadingComplete to true.
     setTimeout(() => {
       setLoadingComplete(true);
-    }, 4700); // Simulate loading for 3 seconds (adjust as needed).
+    }, 4650); // Simulate loading for 3 seconds (adjust as needed).
   }, []);
 
   const options = {
@@ -52,7 +52,7 @@ const App = () => {
     "art_by_jacinta",
     "Asamaiige",
     "avatarbmb",
-
+    "diiackermann",
     "Chiebuniem_",
     "ChigozieObi_",
     "ChisaLinto",
