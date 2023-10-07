@@ -35,7 +35,7 @@ const App = () => {
     "aok_vii",
     "Arclighttt",
     "arrestingyellow",
-
+    "ayanfe__",
     "ChukwuAdaeze",
     "chukwuadaeze_",
     "bad_oats",
@@ -57,7 +57,7 @@ const App = () => {
     "ChigozieObi_",
     "ChisaLinto",
     "ayoguofficial",
-
+    "kehinde_bb",
     "Delkrapht",
     "deoluphotograph",
     "Desss_chiiii",
