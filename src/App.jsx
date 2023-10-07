@@ -30,9 +30,7 @@ const App = () => {
   };
   const artists = [
     "AnthonyAzekwoh2",
-    "AnthonyAzekwoh",
-
-    "aok_vii",
+    "mumu_illustratr",
     "Arclighttt",
     "arrestingyellow",
     "ayanfee__",
@@ -46,6 +44,9 @@ const App = () => {
     "Akanevans13",
     "AkpomedayeT",
     "Anjoladave",
+    "AnthonyAzekwoh",
+    "artnerdx",
+    "aok_vii",
     "Anny_Inferno",
     "ArtObosa_",
     "artofnuel",
