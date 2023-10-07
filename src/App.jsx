@@ -35,7 +35,7 @@ const App = () => {
     "aok_vii",
     "Arclighttt",
     "arrestingyellow",
-    "ayanfe__",
+    "ayanfee__",
     "ChukwuAdaeze",
     "chukwuadaeze_",
     "bad_oats",
