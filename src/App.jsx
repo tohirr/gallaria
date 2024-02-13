@@ -1,5 +1,5 @@
-import { LocomotiveScrollProvider } from "react-locomotive-scroll";
-import AnimatedCursor from "react-animated-cursor";
+// import { LocomotiveScrollProvider } from "react-locomotive-scroll";
+// import AnimatedCursor from "react-animated-cursor";
 import { Image } from "./Image";
 import { useRef } from "react";
 import { useState } from "react";
@@ -133,29 +133,48 @@ const App = () => {
     "_taiwolasisi",
     "_vickson_",
   ];
+
+  console.log(artists.length);
   return (
     <>
-      <AnimatedCursor />
+      {/* <AnimatedCursor /> */}
       {loadingComplete ? (
         // Render your home page component when loading is complete.
-        <LocomotiveScrollProvider options={options} containerRef={ref}>
-          <main data-scroll-container ref={ref}>
+          <main >
             <div className="flex flex-col lg:flex-row max-w-[100vw]">
               <div className="flex-1">
                 {artists.map(
                   (artiste, index) =>
-                    index % 2 === 0 && <Image key={index} artist={artiste} />
+                    index < 20 && <Image key={index} artist={artiste} />
                 )}
               </div>
               <div className="flex-1">
                 {artists.map(
                   (artiste, index) =>
-                    index % 2 !== 0 && <Image key={index} artist={artiste} />
+                    index > 19 && index < 40 && <Image key={index} artist={artiste} />
+                )}
+              </div>
+
+              <div className="flex-1">
+                {artists.map(
+                  (artiste, index) =>
+                    index > 39 && index < 60 && <Image key={index} artist={artiste} />
+                )}
+              </div>
+              <div className="flex-1">
+                {artists.map(
+                  (artiste, index) =>
+                    index > 59 && index < 80 &&<Image key={index} artist={artiste} />
+                )}
+              </div>
+              <div className="flex-1">
+                {artists.map(
+                  (artiste, index) =>
+                    index > 79 && <Image key={index} artist={artiste} />
                 )}
               </div>
             </div>
           </main>
-        </LocomotiveScrollProvider>
       ) : (
         // Render the Loader component while loading is in progress.
         <Loader />

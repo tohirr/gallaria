@@ -9,9 +9,7 @@ export const Image = ({ artist }) => {
         @{artist}
       </a>
       <img
-        data-scroll
-        data-scroll-class="fadeIn"
-        className="object-cover opacity-40 scale-100"
+        className="object-cover"
         src={`/assets/images/${artist}.jpg`}
         alt=""
       />
