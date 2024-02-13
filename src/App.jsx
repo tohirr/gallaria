@@ -141,36 +141,42 @@ const App = () => {
       {loadingComplete ? (
         // Render your home page component when loading is complete.
           <main >
-            <div className="flex flex-col lg:flex-row max-w-[100vw]">
-              <div className="flex-1">
+            <div className="grid grid-cols-12  max-w-[100vw]">
+              <div className="md:col-span-2 col-span-4">
                 {artists.map(
                   (artiste, index) =>
-                    index < 20 && <Image key={index} artist={artiste} />
+                    index < 17 && <Image key={index} artist={artiste} />
                 )}
               </div>
-              <div className="flex-1">
+              <div className="md:col-span-2 col-span-4">
                 {artists.map(
                   (artiste, index) =>
-                    index > 19 && index < 40 && <Image key={index} artist={artiste} />
+                    index > 16 && index < 33 && <Image key={index} artist={artiste} />
                 )}
               </div>
 
-              <div className="flex-1">
+              <div className="md:col-span-2 col-span-4">
                 {artists.map(
                   (artiste, index) =>
-                    index > 39 && index < 60 && <Image key={index} artist={artiste} />
+                    index > 32 && index < 50 && <Image key={index} artist={artiste} />
                 )}
               </div>
-              <div className="flex-1">
+              <div className="md:col-span-2 col-span-4">
                 {artists.map(
                   (artiste, index) =>
-                    index > 59 && index < 80 &&<Image key={index} artist={artiste} />
+                    index > 49 && index < 70 &&<Image key={index} artist={artiste} />
                 )}
               </div>
-              <div className="flex-1">
+              <div className="md:col-span-2 col-span-4">
                 {artists.map(
                   (artiste, index) =>
-                    index > 79 && <Image key={index} artist={artiste} />
+                    index > 69 && index < 85 &&<Image key={index} artist={artiste} />
+                )}
+              </div>
+              <div className="md:col-span-2 col-span-4">
+                {artists.map(
+                  (artiste, index) =>
+                    index > 84 && <Image key={index} artist={artiste} />
                 )}
               </div>
             </div>
