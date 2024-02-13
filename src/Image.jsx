@@ -4,7 +4,7 @@ export const Image = ({ artist }) => {
     <div className="overflow-hidden flex items-center justify-center relative">
       <a
         href={`https://twitter.com/${artist}`}
-        className="absolute top-3 z-20 left-4 font-mono text-white mix-blend-exclusion underline"
+        className="absolute top-3 z-20 left-4 text-sm lg:text-base font-mono text-white mix-blend-exclusion underline"
       >
         @{artist}
       </a>
