@@ -141,7 +141,7 @@ const App = () => {
       {loadingComplete ? (
         // Render your home page component when loading is complete.
           <main >
-            <div className="columns-3xs gap-2 lg:gap-4 p-2 lg:p-4">
+            <div className="md:columns-3xs columns-2 gap-2 lg:gap-4 p-2 lg:p-4">
                 {artists.map(
                   (artiste, index) =>
                     <Image key={index} artist={artiste} />
