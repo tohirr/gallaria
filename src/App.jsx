@@ -141,45 +141,12 @@ const App = () => {
       {loadingComplete ? (
         // Render your home page component when loading is complete.
           <main >
-            <div className="grid grid-cols-12  max-w-[100vw]">
-              <div className="md:col-span-2 col-span-6">
+            <div className="columns-3xs gap-2 lg:gap-4 p-2 lg:p-4">
                 {artists.map(
                   (artiste, index) =>
-                    index < 17 && <Image key={index} artist={artiste} />
+                    <Image key={index} artist={artiste} />
                 )}
               </div>
-              <div className="md:col-span-2 col-span-6">
-                {artists.map(
-                  (artiste, index) =>
-                    index > 16 && index < 33 && <Image key={index} artist={artiste} />
-                )}
-              </div>
-
-              <div className="md:col-span-2 col-span-6">
-                {artists.map(
-                  (artiste, index) =>
-                    index > 32 && index < 50 && <Image key={index} artist={artiste} />
-                )}
-              </div>
-              <div className="md:col-span-2 col-span-6">
-                {artists.map(
-                  (artiste, index) =>
-                    index > 49 && index < 70 &&<Image key={index} artist={artiste} />
-                )}
-              </div>
-              <div className="md:col-span-2 col-span-6">
-                {artists.map(
-                  (artiste, index) =>
-                    index > 69 && index < 85 &&<Image key={index} artist={artiste} />
-                )}
-              </div>
-              <div className="md:col-span-2 col-span-6">
-                {artists.map(
-                  (artiste, index) =>
-                    index > 84 && <Image key={index} artist={artiste} />
-                )}
-              </div>
-            </div>
           </main>
       ) : (
         // Render the Loader component while loading is in progress.
