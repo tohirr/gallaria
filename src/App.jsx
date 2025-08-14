@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useEffect } from "react";
 
 const App = () => {
@@ -107,6 +108,8 @@ const App = () => {
     "_vickson_",
   ];
 
+  const [selectedImg, setSelectedImg] = useState(null);
+
   useEffect(() => {
     const masonry = document.querySelector("masonry-grid");
     const imgs = Array.from(document.querySelectorAll("masonry-grid img"));
@@ -129,15 +132,27 @@ const App = () => {
   }, [artists]);
 
   return (
-    <masonry-grid>
-      {artists.map((artiste, index) => (
-        <img
-          style={{ visibility: "hidden" }}
-          key={index}
-          src={`/assets/images/${artiste}.jpg`}
-        />
-      ))}
-    </masonry-grid>
+    <>
+      <masonry-grid>
+        {artists.map((artiste, index) => (
+          <img
+            style={{ visibility: "hidden", cursor: "pointer" }}
+            key={index}
+            src={`/assets/images/${artiste}.jpg`}
+            onClick={() => setSelectedImg(`/assets/images/${artiste}.jpg`)}
+          />
+        ))}
+      </masonry-grid>
+
+      {/* Modal */}
+      {selectedImg && (
+        <div className="modal-overlay" onClick={() => setSelectedImg(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <img src={selectedImg} alt="Preview" />
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

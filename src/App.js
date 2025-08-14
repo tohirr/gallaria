@@ -15,7 +15,19 @@ class Masonry extends HTMLElement {
 
     // Choosing number of columns based on the width of the masonry-grid element
     const cols =
-      w > 1200 ? 7 : w > 1000 ? 6 : w > 800 ? 5 : w > 500 ? 4 : w > 300 ? 2 : 1;
+      w > 1500
+        ? 10
+        : w > 1200
+        ? 8
+        : w > 1000
+        ? 6
+        : w > 800
+        ? 5
+        : w > 500
+        ? 4
+        : w > 300
+        ? 2
+        : 1;
 
     this.style.setProperty("--cols", String(cols));
   }
