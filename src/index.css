@@ -2,71 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-} */
-
-html,
+/* html,
 body {
   position: relative;
   height: 100%;
@@ -81,4 +17,48 @@ body {
   opacity: 1;
   transform: scale(1.05);
   transition: opacity 1s ease-in, transform 1s ease-in;
+} */
+
+/* Required: base styles for the masonry-grid */
+masonry-grid {
+  display: block;
+  position: relative;
+  width: 100%;
+
+  /* Default gap, you can override this by setting --gap on the masonry-grid element */
+  --default-gap: 10px;
+}
+
+/* Required: base styles for masonry-grid blocks */
+masonry-grid > * {
+  position: absolute;
+  display: block;
+
+  /* This is the line that causes every block to animate on layout change */
+  transition: top 0.3s, left 0.3s;
+
+  /* Main calcs that set the x position of blocks */
+  --col-width: calc(
+    100% / var(--cols) - var(--gap, var(--default-gap)) * (var(--cols) - 1) /
+      var(--cols)
+  );
+  width: var(--col-width);
+  left: calc(
+    var(--col-width) * var(--col-i) + var(--gap, var(--default-gap)) *
+      var(--col-i)
+  );
+}
+
+/* These are your styles for whatever your blocks look like */
+body {
+  background: black;
+  padding: 10px;
+  color: white;
+  font-family: Inter, Roboto, "Helvetica Neue", "Arial Nova", "Nimbus Sans",
+    Arial, sans-serif;
+}
+
+img {
+  background: rgb(35, 35, 35);
+  border-radius: 10px;
 }

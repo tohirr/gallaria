@@ -1,33 +1,6 @@
-// import { LocomotiveScrollProvider } from "react-locomotive-scroll";
-// import AnimatedCursor from "react-animated-cursor";
-import { Image } from "./Image";
-import { useRef } from "react";
-import { useState } from "react";
 import { useEffect } from "react";
-import Loader from "./LoadIn";
 
 const App = () => {
-  const ref = useRef(null);
-  const [loadingComplete, setLoadingComplete] = useState(false);
-
-  useEffect(() => {
-    // Simulate an asynchronous loading process (e.g., fetching data) here.
-    // Once loading is complete, set setLoadingComplete to true.
-    setTimeout(() => {
-      setLoadingComplete(true);
-    }, 4650); // Simulate loading for 3 seconds (adjust as needed).
-  }, []);
-
-  const options = {
-    smooth: true,
-    inertia: 0.9,
-    mobile: {
-      smooth: true,
-    },
-    tablet: {
-      smooth: true,
-    },
-  };
   const artists = [
     "AnthonyAzekwoh2",
     "mumu_illustratr",
@@ -134,25 +107,37 @@ const App = () => {
     "_vickson_",
   ];
 
-  console.log(artists.length);
+  useEffect(() => {
+    const masonry = document.querySelector("masonry-grid");
+    const imgs = Array.from(document.querySelectorAll("masonry-grid img"));
+
+    if (!masonry || imgs.length === 0) return;
+
+    Promise.all(
+      imgs.map(
+        (img) =>
+          new Promise((resolve, reject) => {
+            if (img.complete) return resolve();
+            img.onload = resolve;
+            img.onerror = reject;
+          })
+      )
+    ).then(() => {
+      imgs.forEach((img) => (img.style.visibility = "visible"));
+      masonry.layout();
+    });
+  }, [artists]);
+
   return (
-    <>
-      {/* <AnimatedCursor /> */}
-      {loadingComplete ? (
-        // Render your home page component when loading is complete.
-          <main >
-            <div className="md:columns-3xs columns-2 gap-2 lg:gap-4 p-2 lg:p-4">
-                {artists.map(
-                  (artiste, index) =>
-                    <Image key={index} artist={artiste} />
-                )}
-              </div>
-          </main>
-      ) : (
-        // Render the Loader component while loading is in progress.
-        <Loader />
-      )}
-    </>
+    <masonry-grid>
+      {artists.map((artiste, index) => (
+        <img
+          style={{ visibility: "hidden" }}
+          key={index}
+          src={`/assets/images/${artiste}.jpg`}
+        />
+      ))}
+    </masonry-grid>
   );
 };
 
