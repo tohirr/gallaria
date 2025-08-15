@@ -6,9 +6,6 @@ const CLOUD_NAME = "dbgxvkfqw"; // ← change me
 const CLOUD_TAG = "african-art"; // ← change me (the tag on your assets)
 const CLOUD_LIST_URL = `https://res.cloudinary.com/${CLOUD_NAME}/image/list/${CLOUD_TAG}.json`;
 
-const SHEET_API_URL =
-  "https://script.google.com/macros/s/AKfycbynhjY77704A8MdamQcv9tX2I4XYRAU2IYc_lbIwHNndqW3mPFCMjYVVNG2qPiH1pHy8g/exec";
-
 const App = () => {
   const [artworks, setArtworks] = useState([]);
   const [selectedImg, setSelectedImg] = useState(null);
@@ -51,7 +48,7 @@ const App = () => {
       });
 
       // Views from Google Sheets (format: [{ public_id, views }])
-      const rows = await fetch(SHEET_API_URL)
+      const rows = await fetch("/api/views")
         .then((r) => r.json())
         .catch(() => []);
 
@@ -93,7 +90,7 @@ const App = () => {
 
   // View handler → POST to Apps Script (upsert by public_id) + optimistic UI
   const handleView = async (public_id) => {
-    fetch(SHEET_API_URL, {
+    fetch("/api/views", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ public_id }),
