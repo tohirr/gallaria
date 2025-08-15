@@ -142,13 +142,9 @@ const App = () => {
               key={item.public_id}
               src={isHighResLoaded ? item.thumb : item.placeholder}
               alt={item.public_id}
-              style={{
-                cursor: "pointer",
-                // width: "100%",
-                // display: "block",
-              }}
               loading="lazy"
               onClick={() => handleImageClick(item)}
+              className="cursor-pointer hover:scale-105 transition-transform duration-300"
             />
             //  <div
             //   style={{
@@ -173,10 +169,25 @@ const App = () => {
       {selectedImg && selectedArtwork && (
         <div className="modal-overlay" onClick={closeModal}>
           <div
-            className="modal-content bg-black"
+            className="modal-content bg-black relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Show low-res thumb first, then high-res when loaded */}
+            <div
+              style={{
+                position: "absolute",
+                bottom: "8px",
+                right: "8px",
+                background: "rgba(0, 0, 0, 0.7)",
+                color: "white",
+                padding: "4px 8px",
+                borderRadius: "8px",
+                fontSize: "12px",
+                pointerEvents: "none",
+              }}
+            >
+              👁️ {selectedArtwork.views}
+            </div>
             <img
               src={selectedArtwork.thumb}
               alt="Preview"
