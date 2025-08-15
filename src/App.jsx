@@ -173,21 +173,7 @@ const App = () => {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Show low-res thumb first, then high-res when loaded */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: "8px",
-                right: "8px",
-                background: "rgba(0, 0, 0, 0.7)",
-                color: "white",
-                padding: "4px 8px",
-                borderRadius: "8px",
-                fontSize: "12px",
-                pointerEvents: "none",
-              }}
-            >
-              👁️ {selectedArtwork.views}
-            </div>
+
             <img
               src={selectedArtwork.thumb}
               alt="Preview"
@@ -205,7 +191,31 @@ const App = () => {
               onLoad={handleModalImageLoad}
             />
             {/* Loading indicator */}
-            {!modalImageLoaded && (
+            {modalImageLoaded ? (
+              <>
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "8px",
+                    right: "8px",
+                    background: "rgba(0, 0, 0, 0.7)",
+                    color: "white",
+                    padding: "4px 8px",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                    pointerEvents: "none",
+                  }}
+                >
+                  👁️ {selectedArtwork.views}
+                </div>
+                <button
+                  className="absolute top-4 right-4 rounded-xl bg-white/50 text-black p-1 px-3 cursor-pointer font-bold transition-transform hover:scale-110"
+                  onClick={closeModal}
+                >
+                  &times;
+                </button>
+              </>
+            ) : (
               <>
                 <div
                   style={{
@@ -227,12 +237,6 @@ const App = () => {
               </>
             )}
             {/* Exit button */}
-            <button
-              className="absolute top-4 right-4 rounded-xl bg-white/50 text-black p-1 px-3 cursor-pointer font-bold transition-transform hover:scale-110"
-              onClick={closeModal}
-            >
-              &times;
-            </button>
           </div>
         </div>
       )}
