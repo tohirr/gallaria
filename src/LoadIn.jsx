@@ -12,7 +12,7 @@ const Loader = () => {
         clearInterval(interval);
         setLoading(false);
       }
-    }, 70); // Adjust the interval as needed for the desired speed
+    }, 40); // Adjust the interval as needed for the desired speed
 
     return () => clearInterval(interval);
   }, [percentage]);
