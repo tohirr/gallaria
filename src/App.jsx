@@ -143,22 +143,6 @@ const App = () => {
               onClick={() => handleImageClick(item)}
               className="cursor-pointer hover:scale-105 transition-transform duration-300"
             />
-            //  <div
-            //   style={{
-            //     position: "absolute",
-            //     bottom: "8px",
-            //     right: "8px",
-            //     background: "rgba(0, 0, 0, 0.7)",
-            //     color: "white",
-            //     padding: "4px 8px",
-            //     borderRadius: "4px",
-            //     fontSize: "12px",
-            //     pointerEvents: "none",
-            //   }}
-            // >
-            // 👁️ {item.views}
-            // </div>
-            // </div>
           );
         })}
       </masonry-grid>
@@ -207,7 +191,10 @@ const App = () => {
                 </div>
                 <a
                   href={selectedArtwork.full}
-                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download={`${selectedArtwork.public_id}.jpg`} // force filename
+                  onClick={(e) => e.stopPropagation()} // prevent modal close
                   style={{
                     position: "absolute",
                     bottom: "8px",
