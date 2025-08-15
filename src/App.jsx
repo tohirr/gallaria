@@ -7,7 +7,7 @@ const CLOUD_TAG = "african-art"; // ← change me (the tag on your assets)
 const CLOUD_LIST_URL = `https://res.cloudinary.com/${CLOUD_NAME}/image/list/${CLOUD_TAG}.json`;
 
 const SHEET_API_URL =
-  "https://script.google.com/macros/s/AKfycbwc0_R9vEBNN5GaNFntxk290mjV4eo8j52xLTC3hfoLd6QzPFU19W0rxP6cFKO-w60qJQ/exec"; // ← change me
+  "https://script.google.com/macros/s/AKfycbynhjY77704A8MdamQcv9tX2I4XYRAU2IYc_lbIwHNndqW3mPFCMjYVVNG2qPiH1pHy8g/exec";
 
 const App = () => {
   const [artworks, setArtworks] = useState([]);
@@ -208,6 +208,24 @@ const App = () => {
                 >
                   👁️ {selectedArtwork.views}
                 </div>
+                <a
+                  href={selectedArtwork.full}
+                  download
+                  style={{
+                    position: "absolute",
+                    bottom: "8px",
+                    left: "8px",
+                    background: "rgba(255, 255, 255, 0.7)",
+                    color: "black",
+                    padding: "4px 8px",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                    textDecoration: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  ⬇️ Download
+                </a>
                 <button
                   className="absolute top-4 right-4 rounded-xl bg-white/50 text-black p-1 px-3 cursor-pointer font-bold transition-transform hover:scale-110"
                   onClick={closeModal}
