@@ -130,22 +130,25 @@ const App = () => {
   return (
     <>
       <Loader />
-      <masonry-grid>
+      {/* <masonry-grid> */}
+      <div className="columns-2 sm:columns-5 md:columns-5 lg:columns-7 2xl:columns-9 gap-2 md:gap-4 p-2 md:p-4">
         {artworks.map((item) => {
-          const isHighResLoaded = loadedImages.has(item.public_id);
+          // const isHighResLoaded = loadedImages.has(item.public_id);
           return (
             // <div key={item.public_id} style={{ position: "relative" }}>
             <img
               key={item.public_id}
-              src={isHighResLoaded ? item.thumb : item.placeholder}
+              // src={isHighResLoaded ? item.thumb : item.placeholder}
+              src={item.thumb}
               alt={item.public_id}
               loading="lazy"
               onClick={() => handleImageClick(item)}
-              className="cursor-pointer hover:scale-105 transition-transform duration-300"
+              className="cursor-pointer hover:opacity-70 transition-opacity rounded-xl select-none mb-2 md:mb-4 break-inside"
             />
           );
         })}
-      </masonry-grid>
+      </div>
+      {/* </masonry-grid> */}
 
       {selectedImg && selectedArtwork && (
         <div className="modal-overlay" onClick={closeModal}>
@@ -189,27 +192,7 @@ const App = () => {
                 >
                   👁️ {selectedArtwork.views}
                 </div>
-                <a
-                  href={selectedArtwork.full}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download={`${selectedArtwork.public_id}.jpg`} // force filename
-                  onClick={(e) => e.stopPropagation()} // prevent modal close
-                  style={{
-                    position: "absolute",
-                    bottom: "8px",
-                    left: "8px",
-                    background: "rgba(255, 255, 255, 0.7)",
-                    color: "black",
-                    padding: "4px 8px",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                    textDecoration: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  ⬇️ Download
-                </a>
+
                 <button
                   className="absolute top-4 right-4 rounded-xl bg-white/50 text-black p-1 px-3 cursor-pointer font-bold transition-transform hover:scale-110"
                   onClick={closeModal}

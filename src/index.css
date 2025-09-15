@@ -52,7 +52,7 @@ masonry-grid > * {
 /* These are your styles for whatever your blocks look like */
 body {
   background: black;
-  padding: 10px;
+  /* padding: 10px; */
   color: white;
   font-family: Inter, Roboto, "Helvetica Neue", "Arial Nova", "Nimbus Sans",
     Arial, sans-serif;
