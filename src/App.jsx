@@ -143,7 +143,7 @@ const App = () => {
               alt={item.public_id}
               loading="lazy"
               onClick={() => handleImageClick(item)}
-              className="cursor-pointer  rounded-xl select-none mb-2 md:mb-4 transition-all duration-200 ease-in-out inset-ring ring-4 ring-transparent hover:ring-white/20 hover:opacity-80"
+              className="cursor-pointer  rounded-xl select-none mb-2 md:mb-4 transition-all duration-200 ease-in-out inset-ring ring-4 ring-transparent hover:ring-white/20 hover:opacity-70"
             />
           );
         })}
