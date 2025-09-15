@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import Loader from "./LoadIn";
 
-const CLOUD_NAME = "dbgxvkfqw"; // ← change me
-const CLOUD_TAG = "african-art"; // ← change me (the tag on your assets)
+const CLOUD_NAME = "dbgxvkfqw";
+const CLOUD_TAG = "african-art";
 const CLOUD_LIST_URL = `https://res.cloudinary.com/${CLOUD_NAME}/image/list/${CLOUD_TAG}.json`;
 
 const App = () => {
@@ -86,7 +86,7 @@ const App = () => {
       };
       img.src = artwork.thumb;
     });
-  }, [artworks.length]);
+  }, []);
 
   // View handler → POST to Apps Script (upsert by public_id) + optimistic UI
   const handleView = async (public_id) => {
@@ -98,13 +98,13 @@ const App = () => {
       /* ignore for optimistic UI */
     });
 
-    setArtworks((prev) =>
-      prev
-        .map((a) =>
-          a.public_id === public_id ? { ...a, views: a.views + 1 } : a
-        )
-        .sort((a, b) => b.views - a.views)
-    );
+    // setArtworks((prev) =>
+    //   prev
+    //     .map((a) =>
+    //       a.public_id === public_id ? { ...a, views: a.views + 1 } : a
+    //     )
+    //     .sort((a, b) => b.views - a.views)
+    // );
   };
 
   // Handle image click - increment view and show modal
@@ -130,7 +130,7 @@ const App = () => {
   return (
     <>
       <Loader />
-      {/* <masonry-grid> */}
+
       <div className="columns-2 sm:columns-5 md:columns-5 lg:columns-7 2xl:columns-9 gap-2 md:gap-4 p-2 md:p-4">
         {artworks.map((item) => {
           // const isHighResLoaded = loadedImages.has(item.public_id);
@@ -143,12 +143,11 @@ const App = () => {
               alt={item.public_id}
               loading="lazy"
               onClick={() => handleImageClick(item)}
-              className="cursor-pointer hover:opacity-70 transition-opacity rounded-xl select-none mb-2 md:mb-4 break-inside"
+              className="cursor-pointer  rounded-xl select-none mb-2 md:mb-4 transition-all duration-200 ease-in-out inset-ring ring-4 ring-transparent hover:ring-white/20 hover:opacity-80"
             />
           );
         })}
       </div>
-      {/* </masonry-grid> */}
 
       {selectedImg && selectedArtwork && (
         <div className="modal-overlay" onClick={closeModal}>
