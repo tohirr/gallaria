@@ -1,53 +1,49 @@
-import { useEffect, useState } from "react";
-import "./App.css";
+import { useEffect, useRef, useState } from "react";
 import Loader from "./LoadIn";
 
 const CLOUD_NAME = "dbgxvkfqw";
 const CLOUD_TAG = "african-art";
 const CLOUD_LIST_URL = `https://res.cloudinary.com/${CLOUD_NAME}/image/list/${CLOUD_TAG}.json`;
 
-const App = () => {
-  const [artworks, setArtworks] = useState([]);
-  const [selectedImg, setSelectedImg] = useState(null);
-  const [selectedArtwork, setSelectedArtwork] = useState(null);
-  const [loadedImages, setLoadedImages] = useState(new Set());
-  const [modalImageLoaded, setModalImageLoaded] = useState(false);
+const BATCH_SIZE = 30;
+// How many thumbs the intro loader waits for before revealing the grid.
+const PRELOAD_COUNT = 12;
 
+const App = () => {
+  const [artworks, setArtworks] = useState(null); // null = still fetching
+  const [selected, setSelected] = useState(null);
+  const [modalImageLoaded, setModalImageLoaded] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
+  const [preloadedCount, setPreloadedCount] = useState(0);
+  const sentinelRef = useRef(null);
+
+  // Fetch catalog from Cloudinary, merge view counts from the Sheets API.
   useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
-      // Cloudinary list by tag
       const cld = await fetch(CLOUD_LIST_URL)
         .then((r) => r.json())
         .catch(() => ({ resources: [] }));
 
       const assets = (cld.resources || []).map((r) => {
-        const publicId = r.public_id; // includes folder if present
+        const publicId = r.public_id;
         const format = r.format || "jpg";
         const base = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload`;
 
-        // Get original dimensions and calculate aspect ratio
         const width = r.width || 1;
         const height = r.height || 1;
-        const aspectRatio = width / height;
 
         return {
           public_id: publicId,
           width,
           height,
-          aspectRatio,
-          // Low-res placeholder maintaining aspect ratio
-          placeholder: `${base}/w_50,ar_${aspectRatio.toFixed(
-            3
-          )},c_fill,q_auto,f_auto,e_blur:300/${publicId}.${format}`,
-          // smaller thumb for grid + full-size for modal; both optimized
+          aspectRatio: width / height,
           thumb: `${base}/c_fill,w_600,f_auto,q_auto/${publicId}.${format}`,
           full: `${base}/f_auto,q_auto/${publicId}.${format}`,
         };
       });
 
-      // Views from Google Sheets (format: [{ public_id, views }])
       const rows = await fetch("/api/views")
         .then((r) => r.json())
         .catch(() => []);
@@ -69,96 +65,123 @@ const App = () => {
     };
   }, []);
 
-  // After artworks render, wait for images to load → show + relayout masonry
+  // Preload the first few thumbs so the intro loader reports real progress.
   useEffect(() => {
-    const masonry = document.querySelector("masonry-grid");
-    const imgs = Array.from(document.querySelectorAll("masonry-grid img"));
-    if (!masonry || imgs.length === 0) return;
+    if (!artworks || artworks.length === 0) return;
 
-    artworks.forEach((artwork) => {
+    let cancelled = false;
+    artworks.slice(0, PRELOAD_COUNT).forEach((a) => {
       const img = new Image();
-      img.onload = () => {
-        setLoadedImages((prev) => new Set([...prev, artwork.public_id]));
-        // Re-layout after each high-res image loads to adjust for size differences
-        setTimeout(() => {
-          if (typeof masonry.layout === "function") masonry.layout();
-        }, 10);
+      img.onload = img.onerror = () => {
+        if (!cancelled) setPreloadedCount((n) => n + 1);
       };
-      img.src = artwork.thumb;
+      img.src = a.thumb;
     });
-  }, []);
 
-  // View handler → POST to Apps Script (upsert by public_id) + optimistic UI
-  const handleView = async (public_id) => {
+    return () => {
+      cancelled = true;
+    };
+  }, [artworks]);
+
+  const preloadTotal = artworks
+    ? Math.min(PRELOAD_COUNT, artworks.length)
+    : PRELOAD_COUNT;
+  const progress =
+    artworks === null
+      ? 0.05 // catalog request in flight
+      : preloadTotal === 0
+      ? 1 // nothing to load (fetch failed or empty tag)
+      : 0.15 + 0.85 * Math.min(1, preloadedCount / preloadTotal);
+
+  const hasMore = artworks !== null && visibleCount < artworks.length;
+
+  // Infinite scroll: grow the visible window while the sentinel is in range.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((n) => n + BATCH_SIZE);
+        }
+      },
+      { rootMargin: "600px" }
+    );
+
+    // Re-observe after each growth: observing fires an immediate callback with
+    // the current state, so if the sentinel is still in range we keep loading
+    // until it leaves the margin or unmounts (hasMore = false).
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, visibleCount]);
+
+  // Batches render as separate column containers so already-laid-out rows
+  // don't rebalance when a new batch appends.
+  const batches = [];
+  if (artworks) {
+    for (let i = 0; i < Math.min(visibleCount, artworks.length); i += BATCH_SIZE) {
+      batches.push(artworks.slice(i, i + BATCH_SIZE));
+    }
+  }
+
+  const handleImageClick = (artwork) => {
+    // Fire-and-forget view count; the UI doesn't wait on it.
     fetch("/api/views", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ public_id }),
-    }).catch(() => {
-      /* ignore for optimistic UI */
-    });
+      body: JSON.stringify({ public_id: artwork.public_id }),
+    }).catch(() => {});
 
-    // setArtworks((prev) =>
-    //   prev
-    //     .map((a) =>
-    //       a.public_id === public_id ? { ...a, views: a.views + 1 } : a
-    //     )
-    //     .sort((a, b) => b.views - a.views)
-    // );
+    setSelected(artwork);
+    setModalImageLoaded(false);
   };
 
-  // Handle image click - increment view and show modal
-  const handleImageClick = (artwork) => {
-    handleView(artwork.public_id);
-    setSelectedArtwork(artwork);
-    setSelectedImg(artwork.full);
-    setModalImageLoaded(false); // Reset modal image loading state
-  };
-
-  // Handle modal image load
-  const handleModalImageLoad = () => {
-    setModalImageLoaded(true);
-  };
-
-  // Close modal
   const closeModal = () => {
-    setSelectedImg(null);
-    setSelectedArtwork(null);
+    setSelected(null);
     setModalImageLoaded(false);
   };
 
   return (
     <>
-      <Loader />
+      <Loader progress={progress} />
 
-      <div className="columns-2 sm:columns-5 md:columns-5 lg:columns-7 2xl:columns-9 gap-2 md:gap-4 p-2 md:p-4">
-        {artworks.map((item) => {
-          // const isHighResLoaded = loadedImages.has(item.public_id);
-          return (
-            // <div key={item.public_id} style={{ position: "relative" }}>
+      {batches.map((batch) => (
+        <div
+          key={batch[0].public_id}
+          className="columns-2 sm:columns-5 md:columns-5 lg:columns-7 2xl:columns-9 gap-2 md:gap-4 p-2 md:p-4"
+        >
+          {batch.map((item) => (
             <img
               key={item.public_id}
-              // src={isHighResLoaded ? item.thumb : item.placeholder}
               src={item.thumb}
               alt={item.public_id}
               loading="lazy"
               onClick={() => handleImageClick(item)}
-              className="cursor-pointer  rounded-2xl select-none mb-2 md:mb-4 transition-all duration-200 ease-in-out ring-4 ring-transparent hover:ring-stone-900 hover:opacity-70"
+              className="cursor-pointer rounded-2xl select-none mb-2 md:mb-4 transition-all duration-200 ease-in-out ring-4 ring-transparent hover:ring-stone-900 hover:opacity-70"
             />
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      ))}
 
-      {selectedImg && selectedArtwork && (
+      {hasMore && (
+        <div
+          ref={sentinelRef}
+          className="h-10 flex justify-center items-center font-mono text-sm text-gray-500"
+        >
+          loading more...
+        </div>
+      )}
+
+      {selected && (
         <div className="modal-overlay" onClick={closeModal}>
           <div
             className="modal-content bg-black relative"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Show low-res thumb first, then high-res when loaded */}
-
+            {/* Low-res thumb holds the frame until the full image decodes */}
             <img
-              src={selectedArtwork.thumb}
+              src={selected.thumb}
               alt="Preview"
               style={{
                 display: modalImageLoaded ? "none" : "block",
@@ -166,32 +189,17 @@ const App = () => {
               }}
             />
             <img
-              src={selectedImg}
+              src={selected.full}
               alt="Preview"
-              style={{
-                display: modalImageLoaded ? "block" : "none",
-              }}
-              onLoad={handleModalImageLoad}
+              style={{ display: modalImageLoaded ? "block" : "none" }}
+              onLoad={() => setModalImageLoaded(true)}
             />
-            {/* Loading indicator */}
+
             {modalImageLoaded ? (
               <>
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: "8px",
-                    right: "8px",
-                    background: "rgba(0, 0, 0, 0.7)",
-                    color: "white",
-                    padding: "4px 8px",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                    pointerEvents: "none",
-                  }}
-                >
-                  👁️ {selectedArtwork.views}
+                <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded-lg text-xs pointer-events-none">
+                  👁️ {selected.views}
                 </div>
-
                 <button
                   className="absolute top-4 right-4 rounded-xl bg-white/50 text-black p-1 px-3 cursor-pointer font-bold transition-transform hover:scale-110"
                   onClick={closeModal}
@@ -200,27 +208,12 @@ const App = () => {
                 </button>
               </>
             ) : (
-              <>
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <div style={{ display: "flex", gap: "10px" }}>
-                    <div className="wave-dot" />
-                    <div className="wave-dot" />
-                    <div className="wave-dot" />
-                  </div>
-                </div>
-              </>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-2.5">
+                <div className="wave-dot" />
+                <div className="wave-dot" />
+                <div className="wave-dot" />
+              </div>
             )}
-            {/* Exit button */}
           </div>
         </div>
       )}

@@ -2,57 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* html,
-body {
-  position: relative;
-  height: 100%;
-}
-body {
-  background-color: black;
-}
-* {
-  box-sizing: border-box;
-}
-.fadeIn {
-  opacity: 1;
-  transform: scale(1.05);
-  transition: opacity 1s ease-in, transform 1s ease-in;
-} */
-
-/* Required: base styles for the masonry-grid */
-masonry-grid {
-  display: block;
-  position: relative;
-  width: 100%;
-
-  /* Default gap, you can override this by setting --gap on the masonry-grid element */
-  --default-gap: 10px;
-}
-
-/* Required: base styles for masonry-grid blocks */
-masonry-grid > * {
-  position: absolute;
-  display: block;
-
-  /* This is the line that causes every block to animate on layout change */
-  transition: top 0.3s, left 0.3s;
-
-  /* Main calcs that set the x position of blocks */
-  --col-width: calc(
-    100% / var(--cols) - var(--gap, var(--default-gap)) * (var(--cols) - 1) /
-      var(--cols)
-  );
-  width: var(--col-width);
-  left: calc(
-    var(--col-width) * var(--col-i) + var(--gap, var(--default-gap)) *
-      var(--col-i)
-  );
-}
-
-/* These are your styles for whatever your blocks look like */
 body {
   background: black;
-  /* padding: 10px; */
   color: white;
   font-family: Inter, Roboto, "Helvetica Neue", "Arial Nova", "Nimbus Sans",
     Arial, sans-serif;
@@ -71,8 +22,8 @@ img {
   justify-content: center;
   align-items: center;
   z-index: 999;
-  animation: fadeIn 0.3s ease;
   max-height: 100vh;
+  animation: fadeIn 0.3s ease;
 }
 
 .modal-content {
@@ -108,74 +59,6 @@ img {
   }
 }
 
-.like-btn {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  background: rgba(255, 255, 255, 0.8);
-  border: none;
-  border-radius: 8px;
-  padding: 4px 8px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-  animation: fadeIn 0.3s ease;
-}
-
-.modal-content {
-  max-width: 90%;
-  max-height: 90%;
-  animation: zoomIn 0.3s ease;
-}
-
-.modal-content img {
-  width: auto;
-  height: auto;
-  object-fit: cover;
-  border-radius: 12px;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes zoomIn {
-  from {
-    transform: scale(0.95);
-  }
-  to {
-    transform: scale(1);
-  }
-}
-
-.image-container {
-  position: relative;
-  overflow: hidden;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 @keyframes wave {
   0%,
   60%,
@@ -188,6 +71,7 @@ img {
     transform: scale(1.2);
   }
 }
+
 .wave-dot {
   width: 20px;
   height: 20px;
