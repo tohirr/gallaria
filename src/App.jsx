@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Loader from "./LoadIn";
-
-const CLOUD_NAME = "dbgxvkfqw";
-const CLOUD_TAG = "african-art";
-const CLOUD_LIST_URL = `https://res.cloudinary.com/${CLOUD_NAME}/image/list/${CLOUD_TAG}.json`;
+import PixelImage from "./components/PixelImage";
+import { CLOUD_LIST_URL, rungUrl, fullUrl } from "./lib/cloudinary";
 
 const BATCH_SIZE = 30;
 // How many thumbs the intro loader waits for before revealing the grid.
@@ -27,20 +25,17 @@ const App = () => {
         .catch(() => ({ resources: [] }));
 
       const assets = (cld.resources || []).map((r) => {
-        const publicId = r.public_id;
-        const format = r.format || "jpg";
-        const base = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload`;
-
-        const width = r.width || 1;
-        const height = r.height || 1;
-
+        const asset = {
+          public_id: r.public_id,
+          format: r.format || "jpg",
+          width: r.width || 1,
+          height: r.height || 1,
+        };
         return {
-          public_id: publicId,
-          width,
-          height,
-          aspectRatio: width / height,
-          thumb: `${base}/c_fill,w_600,f_auto,q_auto/${publicId}.${format}`,
-          full: `${base}/f_auto,q_auto/${publicId}.${format}`,
+          ...asset,
+          aspectRatio: asset.width / asset.height,
+          thumb: rungUrl(asset, 600),
+          full: fullUrl(asset),
         };
       });
 
@@ -75,7 +70,7 @@ const App = () => {
       img.onload = img.onerror = () => {
         if (!cancelled) setPreloadedCount((n) => n + 1);
       };
-      img.src = a.thumb;
+      img.src = rungUrl(a, 16); // first rung of the pixel ladder
     });
 
     return () => {
@@ -152,13 +147,10 @@ const App = () => {
           className="columns-2 sm:columns-5 md:columns-5 lg:columns-7 2xl:columns-9 gap-2 md:gap-4 p-2 md:p-4"
         >
           {batch.map((item) => (
-            <img
+            <PixelImage
               key={item.public_id}
-              src={item.thumb}
-              alt={item.public_id}
-              loading="lazy"
+              item={item}
               onClick={() => handleImageClick(item)}
-              className="cursor-pointer rounded-2xl select-none mb-2 md:mb-4 transition-all duration-200 ease-in-out ring-4 ring-transparent hover:ring-stone-900 hover:opacity-70"
             />
           ))}
         </div>
