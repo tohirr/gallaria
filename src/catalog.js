@@ -1,44 +1,52 @@
-import { CLOUD_LIST_URL, rungUrl, fullUrl } from "./lib/cloudinary";
+import { CLOUD_NAME, LEGACY_TAG, TAG, rungUrl, fullUrl } from "./lib/cloudinary";
 
-// Fetch the Cloudinary tag listing and merge view counts from the Sheets API.
-// Returns items sorted by views, most viewed first.
+// Two Cloudinary tags: attributed works (`gallaria`, uploaded from tweets with
+// the artist as context) and the legacy collection (`african-art`). A legacy
+// work disappears once an attributed upload names it in `replaces`, or when
+// it's hidden by hand — that's the phase-out.
+//
+// /api/catalog reads both from the Admin API (fresh, edge-cached a minute).
+// If it's unreachable, the public resource lists are the fallback.
+async function fetchCatalog() {
+  const fresh = sessionStorage.getItem("gallaria-fresh");
+  sessionStorage.removeItem("gallaria-fresh");
+  try {
+    const res = await fetch(`/api/catalog${fresh ? `?t=${Date.now()}` : ""}`);
+    if (res.ok) return await res.json();
+  } catch {
+    // fall through to the public lists
+  }
+  const list = (tag, legacy) =>
+    fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${tag}.json`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { resources: [] }))
+      .then((d) => (d.resources || []).map((r) => ({ ...r, legacy, context: r.context?.custom || {} })))
+      .catch(() => []);
+  return (await Promise.all([list(TAG, false), list(LEGACY_TAG, true)])).flat();
+}
+
 export async function loadCatalog() {
-  const cld = await fetch(CLOUD_LIST_URL)
-    .then((r) => r.json())
-    .catch(() => ({ resources: [] }));
+  const works = await fetchCatalog();
+  const replaced = new Set(works.map((w) => w.context.replaces).filter(Boolean));
 
-  const rows = await fetch("/api/views")
-    .then((r) => r.json())
-    .catch(() => []);
-  const views = new Map(
-    (Array.isArray(rows) ? rows : []).map((x) => [x.public_id, Number(x.views) || 0])
-  );
-
-  return (cld.resources || [])
-    .map((r) => {
+  return works
+    .filter((w) => !w.context.hidden && !replaced.has(w.public_id))
+    .map((w) => {
       const asset = {
-        public_id: r.public_id,
-        format: r.format || "jpg",
-        width: r.width || 1,
-        height: r.height || 1,
+        public_id: w.public_id,
+        format: w.format || "jpg",
+        width: w.width || 1,
+        height: w.height || 1,
       };
       return {
         ...asset,
+        legacy: w.legacy,
         aspectRatio: asset.width / asset.height,
-        views: views.get(asset.public_id) ?? 0,
-        url: (w) => rungUrl(asset, w),
+        artist: w.context.artist
+          ? { handle: w.context.artist, name: w.context.artist_name || `@${w.context.artist}` }
+          : null,
+        tweet: w.context.tweet || null,
+        url: (width) => rungUrl(asset, width),
         full: fullUrl(asset),
       };
-    })
-    .sort((a, b) => b.views - a.views);
-}
-
-// Fire-and-forget view count; the UI doesn't wait on it.
-export function recordView(item) {
-  item.views += 1;
-  fetch("/api/views", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ public_id: item.public_id }),
-  }).catch(() => {});
+    });
 }

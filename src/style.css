@@ -66,8 +66,47 @@ html, body {
   max-width: calc(100vw - 2 * var(--pad));
 }
 #caption[hidden] { display: none; }
-#caption-id { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#caption-views { color: var(--dim); }
+#caption-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#caption-title.legacy { color: var(--dim); }
+#caption a { color: var(--fg); text-decoration: none; border-bottom: 1px solid #444; }
+#caption a:hover { border-color: var(--fg); }
+#caption a[hidden] { display: none; }
+
+/* admin bar (only rendered with ?admin) */
+#admin {
+  position: absolute;
+  top: calc(var(--pad) + 28px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  background: rgba(5, 5, 5, 0.85);
+  border: 1px solid #333;
+  pointer-events: auto;
+  max-width: calc(100vw - 2 * var(--pad));
+}
+#admin[hidden] { display: none; }
+#admin input, #admin button {
+  all: unset;
+  font: inherit;
+  padding: 4px 8px;
+  border: 1px solid #333;
+  color: var(--fg);
+}
+#admin input:focus { border-color: var(--fg); }
+#admin #admin-tweet { width: 28ch; }
+#admin-photos { display: inline-flex; }
+#admin #admin-photos button { width: 2ch; text-align: center; color: var(--dim); }
+#admin #admin-photos button + button { border-left: 0; }
+#admin #admin-photos button[aria-pressed="true"] { color: var(--fg); background: #222; }
+#admin button { cursor: pointer; }
+#admin button:hover { background: #1a1a1a; }
+#admin-target, #admin-status { color: var(--dim); white-space: nowrap; }
+#admin.busy { opacity: 0.5; pointer-events: none; }
+#admin [hidden] { display: none; } /* `all: unset` above would otherwise undo [hidden] */
 #caption-close {
   all: unset;
   cursor: pointer;
