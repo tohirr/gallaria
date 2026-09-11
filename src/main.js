@@ -1,11 +1,12 @@
 import "./style.css";
 import { createLoader } from "./loader";
-import { loadCatalog, recordView } from "./catalog";
+import { loadCatalog } from "./catalog";
 import { layout, hitTest } from "./layout";
 import { Camera, MAX_ZOOM } from "./camera";
 import { createRenderer } from "./renderer";
 import { createTextures } from "./textures";
 import { createInput } from "./input";
+import { createAdmin } from "./admin";
 
 const HOME_ZOOM = 0.8;
 const FLY_MS = 700;
@@ -29,6 +30,7 @@ async function boot() {
   }
 
   loader.set(0.05);
+  loader.trickle(0.15); // catalog request in flight: creep, don't freeze
   const items = await loadCatalog();
   loader.set(0.15);
   $("count").textContent = `${items.length} works`;
@@ -37,6 +39,7 @@ async function boot() {
   const camera = new Camera(tile);
   const textures = createTextures(renderer.gl, items);
 
+  loader.trickle(0.99); // until the first rung lands, then real progress
   await textures.bootstrap((p) => loader.set(0.15 + 0.85 * p));
 
   // --- state -------------------------------------------------------------
@@ -63,18 +66,49 @@ async function boot() {
 
   // --- focus / fly-to ----------------------------------------------------
   const caption = $("caption");
-  function setFocus(item, { animate = true, count = true } = {}) {
+  let admin = null;
+  try {
+    admin = createAdmin({
+      // A link or hide changes the catalog; reload onto the new work.
+      onLinked(work) {
+        sessionStorage.setItem("gallaria-fresh", "1"); // skip the edge cache once
+        location.hash = work ? encodeURIComponent(work.public_id) : "";
+        location.reload();
+      },
+    });
+  } catch (err) {
+    console.warn("admin mode unavailable:", err.message); // never block the gallery
+  }
+
+  function setFocus(item, { animate = true } = {}) {
     focused = item;
     caption.hidden = !item;
+    admin?.setFocus(item);
     if (item) {
-      if (count) recordView(item);
-      // "african-art/bad_oats_b2qeuf" → "bad_oats"
-      $("caption-id").textContent = item.public_id.split("/").pop().replace(/_[a-z0-9]{6}$/i, "");
-      $("caption-views").textContent = `👁 ${item.views}`;
-      history.replaceState(null, "", `#${encodeURIComponent(item.public_id)}`);
+      const title = $("caption-title");
+      const artist = $("caption-artist");
+      const source = $("caption-source");
+      if (item.artist) {
+        title.textContent = "";
+        artist.textContent = item.artist.name;
+        artist.href = `https://x.com/${item.artist.handle}`;
+        artist.hidden = false;
+        source.href = item.tweet;
+        source.hidden = !item.tweet;
+        document.title = `${item.artist.name} · gallaria`;
+      } else {
+        // "african-art/bad_oats_b2qeuf" → "bad_oats"
+        title.textContent = item.public_id.split("/").pop().replace(/_[a-z0-9]{6}$/i, "");
+        artist.hidden = true;
+        source.hidden = true;
+        document.title = `${title.textContent} · gallaria`;
+      }
+      title.classList.toggle("legacy", !item.artist);
+      history.replaceState(null, "", `${location.search}#${encodeURIComponent(item.public_id)}`);
       flyTo(item, animate);
     } else {
-      history.replaceState(null, "", location.pathname);
+      document.title = "gallaria";
+      history.replaceState(null, "", location.pathname + location.search);
     }
     mark();
   }
@@ -149,9 +183,9 @@ async function boot() {
   const hash = decodeURIComponent(location.hash.slice(1));
   const linked = hash && items.find((it) => it.public_id === hash);
   if (linked) {
-    setFocus(linked, { animate: false, count: false });
+    setFocus(linked, { animate: false });
   } else {
-    // start on the most-viewed work
+    // start on the first work
     const first = items[0].rect;
     camera.x = first.x + first.w / 2;
     camera.y = first.y + first.h / 2;

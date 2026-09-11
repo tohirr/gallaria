@@ -1,10 +1,11 @@
 # gallaria
 
 An infinite, wrapping canvas of art by African artists. Drag to pan, scroll or
-pinch to zoom, click a work to focus it.
+pinch to zoom, click a work to focus it. Every attributed work links to the
+artist and to the tweet it came from.
 
-No framework: one WebGL2 context, a handful of ES modules, and Vite for the dev
-server and build.
+No framework: one WebGL2 context, a handful of ES modules, Vite for the dev
+server and build, and two Vercel functions (`api/catalog.js`, `api/link.js`).
 
 ## How it works
 
@@ -22,8 +23,41 @@ server and build.
   drag or two-finger scroll pans, pinch or ctrl/cmd+wheel zooms about the
   cursor, arrows / `+` / `-` / `0` / `Esc` on the keyboard, momentum on release.
 
-Images come from Cloudinary (tag `african-art`). View counts go through
-`api/views.js` to a Google Sheet.
+## Data
+
+Cloudinary (cloud `dbgxvkfqw`) is the store. Two tags:
+
+- `gallaria` — attributed works, uploaded from tweets. Each asset carries its
+  attribution as context metadata: `tweet`, `artist`, `artist_name`, and
+  optionally `replaces` (the legacy work it supersedes).
+- `african-art` — the original collection, being phased out. A legacy work
+  stays on the canvas until an attributed upload names it in `replaces`, or it
+  is hidden (`hidden=1` in context).
+
+`GET /api/catalog` (`api/catalog.js`) reads both tags from the Admin API with
+context, edge-cached for a minute. If the Admin API is unavailable it falls
+back to the public resource lists, which lag by a few minutes.
+
+## Attribution
+
+Open the site with `?admin=<token>` once (the token is remembered on that
+device, so `?admin` is enough afterwards). The bar at the top
+takes a tweet URL and, for multi-photo tweets, which photos to add (toggle 1–4;
+numbers the tweet doesn't have are ignored):
+
+- with a legacy work focused, **link** uploads the tweet's original-size photo
+  with its attribution and marks the legacy work as replaced;
+- with nothing (or an attributed work) focused, **link** adds a new work;
+- **hide** retires a legacy work that can't be traced.
+
+`POST /api/link` (`api/link.js`) does the work: it resolves the tweet through
+the fxtwitter API, uploads to Cloudinary from the image URL with `overwrite` +
+`invalidate` (re-linking is idempotent) and eagerly generates the 16/64 px
+rungs so a new work never shows a cold transform.
+
+For batches, `node scripts/ingest.mjs [--dry-run]` runs the same pipeline over
+`src/data/tweets.txt`. `node scripts/warm.mjs` re-warms the CDN for the small
+rungs of every work (run after changing rung URLs).
 
 ## Dev
 
@@ -31,3 +65,15 @@ Images come from Cloudinary (tag `african-art`). View counts go through
 pnpm install
 pnpm dev
 ```
+
+`.env` (not committed):
+
+```
+CLOUDINARY_API_KEY=…
+CLOUDINARY_API_SECRET=…
+ADMIN_TOKEN=…
+```
+
+The same three variables must be set in the Vercel project for `/api/catalog`
+and `/api/link` to work in production. `vite.config.js` serves the `api/`
+functions locally so `/api/*` works under `pnpm dev`.

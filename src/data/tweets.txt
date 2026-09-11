@@ -1,0 +1,6 @@
+# One tweet URL per line. Add photo numbers to pick from a multi-photo tweet
+# ("2", "1,3", or "all"; numbers the tweet doesn't have are ignored):
+#   https://x.com/artist/status/123  1,3
+#   https://x.com/artist/status/123  all
+# A trailing "# <legacy public_id>" marks the work it replaces.
+# Run: node scripts/ingest.mjs --dry-run   (then without --dry-run to upload)

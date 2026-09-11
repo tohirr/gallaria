@@ -29,10 +29,21 @@
       <div class="corner bl" id="hint">drag · scroll · pinch · click</div>
       <div class="corner br" id="zoom"></div>
       <div id="caption" hidden>
-        <span id="caption-id"></span>
-        <span id="caption-views"></span>
+        <span id="caption-title"></span>
+        <a id="caption-artist" target="_blank" rel="noopener"></a>
+        <a id="caption-source" target="_blank" rel="noopener">source</a>
         <button id="caption-close" aria-label="Close">×</button>
       </div>
+      <form id="admin" hidden autocomplete="off">
+        <span id="admin-target">adds a new work</span>
+        <input id="admin-tweet" type="url" required placeholder="https://x.com/artist/status/…" aria-label="Tweet URL" />
+        <span id="admin-photos" role="group" aria-label="Photos to add" title="which photos of the tweet to add">
+          <button type="button" aria-pressed="true">1</button><button type="button" aria-pressed="false">2</button><button type="button" aria-pressed="false">3</button><button type="button" aria-pressed="false">4</button>
+        </span>
+        <button type="submit">link</button>
+        <button type="button" id="admin-hide" hidden>hide</button>
+        <span id="admin-status"></span>
+      </form>
     </div>
 
     <div id="loader">
