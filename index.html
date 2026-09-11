@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#050505" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@_tohirr" />
@@ -17,11 +18,29 @@
     />
 
     <link rel="icon" type="image/png" href="/art.png" />
-
     <title>gallaria</title>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <canvas id="gl" aria-label="Infinite canvas of artworks. Drag to pan, scroll or pinch to zoom."></canvas>
+
+    <div id="hud">
+      <div class="corner tl">gallaria</div>
+      <div class="corner tr" id="count"></div>
+      <div class="corner bl" id="hint">drag · scroll · pinch · click</div>
+      <div class="corner br" id="zoom"></div>
+      <div id="caption" hidden>
+        <span id="caption-id"></span>
+        <span id="caption-views"></span>
+        <button id="caption-close" aria-label="Close">×</button>
+      </div>
+    </div>
+
+    <div id="loader">
+      <div class="sheet"><div class="fill"></div></div>
+      <p class="pct">0%</p>
+    </div>
+
+    <noscript>gallaria needs JavaScript and WebGL2.</noscript>
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>

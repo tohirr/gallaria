@@ -1,0 +1,110 @@
+:root {
+  --bg: #050505;
+  --fg: #e8e8e8;
+  --dim: #6b6b6b;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --pad: max(14px, env(safe-area-inset-top));
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+#gl {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  cursor: grab;
+  outline: none;
+}
+#gl.dragging { cursor: grabbing; }
+#gl.over { cursor: pointer; }
+
+#hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+}
+.corner {
+  position: absolute;
+  padding: var(--pad);
+  color: var(--dim);
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+.corner.tl { top: 0; left: 0; color: var(--fg); }
+.corner.tr { top: 0; right: 0; }
+.corner.bl { bottom: 0; left: 0; transition: opacity 0.6s ease; }
+.corner.br { bottom: 0; right: 0; font-variant-numeric: tabular-nums; }
+.corner.bl.gone { opacity: 0; }
+
+#caption {
+  position: absolute;
+  left: 50%;
+  bottom: var(--pad);
+  transform: translateX(-50%);
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(5, 5, 5, 0.8);
+  border: 1px solid #222;
+  pointer-events: auto;
+  max-width: calc(100vw - 2 * var(--pad));
+}
+#caption[hidden] { display: none; }
+#caption-id { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#caption-views { color: var(--dim); }
+#caption-close {
+  all: unset;
+  cursor: pointer;
+  color: var(--dim);
+  padding: 0 4px;
+  font-size: 14px;
+  line-height: 1;
+}
+#caption-close:hover { color: var(--fg); }
+
+/* Intro loader: a white sheet that fills black from the top as real progress
+   arrives (catalog fetch, then the first rung of every image). */
+#loader {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  background: #000;
+  transition: opacity 0.5s ease-in-out;
+}
+#loader.done { opacity: 0; pointer-events: none; }
+#loader .sheet { position: absolute; inset: 0; background: #fff; }
+#loader .fill { background: #000; height: 0%; transition: height 0.3s ease-out; }
+#loader .pct {
+  position: relative;
+  margin: 0;
+  font-size: 3rem;
+  color: #fff;
+  mix-blend-mode: exclusion;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 520px) {
+  .corner.br { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #loader, #loader .fill, .corner.bl { transition: none; }
+}
