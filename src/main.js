@@ -8,7 +8,7 @@ import { createTextures } from "./textures";
 import { createInput } from "./input";
 import { createAdmin } from "./admin";
 
-const HOME_ZOOM = 0.8;
+const HOME_ZOOM = 0.6;
 const FLY_MS = 700;
 const MAINTAIN_MS = 250;
 

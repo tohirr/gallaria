@@ -3,7 +3,7 @@
 // tile height (its gaps absorb the slack) and columns are phase-shifted so the
 // wrap seam never lines up into a visible row.
 export const COL_W = 320;
-export const GAP = 32;
+export const GAP = 144; // ~45% of a column: the works float, they don't tile
 export const BLOCK = 8; // world units per dissolve block
 
 export function layout(items) {
