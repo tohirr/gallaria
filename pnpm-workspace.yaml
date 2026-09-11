@@ -1,2 +1,6 @@
+# Single-package repo; `packages` is required by older pnpm (Vercel), and
+# `allowBuilds` lets pnpm 10+/11 run esbuild's postinstall.
+packages:
+  - "."
 allowBuilds:
   esbuild: true
