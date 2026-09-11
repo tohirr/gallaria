@@ -1,6 +1,5 @@
-# Single-package repo; `packages` is required by older pnpm (Vercel), and
-# `allowBuilds` lets pnpm 10+/11 run esbuild's postinstall.
+# Single-package repo; `packages` is required by older pnpm (Vercel). Nothing
+# in the tree runs an install script any more (esbuild is only an optional
+# peer of Vite 8), so no `allowBuilds` entries are needed for pnpm 10+/11.
 packages:
   - "."
-allowBuilds:
-  esbuild: true
