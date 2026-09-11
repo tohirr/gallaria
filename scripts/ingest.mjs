@@ -4,7 +4,8 @@
 //   node scripts/ingest.mjs [--dry-run]
 //
 // Reads src/data/tweets.txt: one tweet URL per line, optional photo numbers
-// (`2` / `1,3` / `all`; numbers the tweet lacks are ignored), and an optional
+// (`2` / `1,3` / `all`; numbers the tweet lacks are ignored; a `/photo/N` in
+// the URL counts as the number when none is given), and an optional
 // `# <legacy public_id>` comment naming the work it replaces
 // (the attribution checklist's export writes exactly this). Each tweet's
 // original-size photo is uploaded to Cloudinary with the tweet, artist and
@@ -15,7 +16,7 @@
 import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { uploadFromUrl, CLOUD, TAG } from "../api/_lib/cloudinary.js";
-import { linkTweet, resolveTweet, TWEET_RE } from "../api/_lib/tweet.js";
+import { linkTweet, resolveTweet, TWEET_RE, photoInUrl } from "../api/_lib/tweet.js";
 
 const dryRun = process.argv.includes("--dry-run");
 if (existsSync(".env")) process.loadEnvFile(".env");
@@ -31,7 +32,7 @@ for (const raw of text.split("\n")) {
     console.warn(`skip (not a tweet url): ${line}`);
     continue;
   }
-  const photos = !pick ? [1] : pick === "all" ? "all" : pick.split(",").map(Number);
+  const photos = !pick ? [photoInUrl(url) || 1] : pick === "all" ? "all" : pick.split(",").map(Number);
   entries.push({ tweet: url, photos, replaces: comment.trim() || undefined });
 }
 

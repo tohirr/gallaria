@@ -2,6 +2,10 @@
 // API (no auth needed).
 export const TWEET_RE = /(?:twitter|x)\.com\/(\w+)\/status\/(\d+)/;
 
+// A tweet URL copied from an open photo ends in /photo/N; that N is the
+// photo the person was looking at.
+export const photoInUrl = (url) => Number(String(url).match(/\/photo\/(\d+)/)?.[1]) || null;
+
 export async function resolveTweet(url) {
   const m = String(url).match(TWEET_RE);
   if (!m) throw new Error("not a tweet url");
@@ -30,7 +34,8 @@ export async function resolveTweet(url) {
 // `photos` is a list of 1-based photo numbers (or "all"); numbers the tweet
 // doesn't have are ignored. `replaces` is the legacy public_id this work
 // supersedes, if any — attached to the first uploaded photo only.
-export async function linkTweet({ tweet, photos = [1], replaces }, uploadFromUrl) {
+export async function linkTweet({ tweet, photos, replaces }, uploadFromUrl) {
+  photos ??= [photoInUrl(tweet) || 1];
   const info = await resolveTweet(tweet);
   const count = info.photos.length;
   if (count === 0) throw new Error("tweet has no photos");

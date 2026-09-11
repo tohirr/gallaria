@@ -27,6 +27,11 @@ export function createAdmin({ onLinked }) {
     b.addEventListener("click", () => b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") !== "true"))
   );
   const selected = () => picks.filter((b) => b.getAttribute("aria-pressed") === "true").map((b) => Number(b.textContent));
+  // Pasting a URL that ends in /photo/N selects that photo.
+  tweet.addEventListener("input", () => {
+    const n = Number(tweet.value.match(/\/photo\/(\d)/)?.[1]);
+    if (n >= 1 && n <= 4) picks.forEach((b) => b.setAttribute("aria-pressed", Number(b.textContent) === n));
+  });
   const target = document.getElementById("admin-target");
   const status = document.getElementById("admin-status");
   const hideBtn = document.getElementById("admin-hide");

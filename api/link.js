@@ -25,7 +25,8 @@ export default async function handler(req, res) {
   try {
     if (body.action === "link") {
       const work = await linkTweet(
-        { tweet: body.tweet, photos: body.photos === "all" ? "all" : Array.isArray(body.photos) ? body.photos : [1], replaces: body.replaces },
+        // no `photos` → the /photo/N in the URL if any, else photo 1
+        { tweet: body.tweet, photos: body.photos === "all" ? "all" : Array.isArray(body.photos) ? body.photos : undefined, replaces: body.replaces },
         uploadFromUrl
       );
       return res.status(200).json(work);
