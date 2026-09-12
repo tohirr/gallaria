@@ -14,5 +14,9 @@
     "eslint": "^10.10.0",
     "globals": "^17.12.0",
     "vite": "^8.2.2"
+  },
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0"
   }
 }

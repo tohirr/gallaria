@@ -1,4 +1,6 @@
 import "./style.css";
+import { inject } from "@vercel/analytics";
+import { injectSpeedInsights } from "@vercel/speed-insights";
 import { createLoader } from "./loader";
 import { loadCatalog } from "./catalog";
 import { layout, hitTest, COL_W, MIN_GAP } from "./layout";
@@ -7,6 +9,9 @@ import { createRenderer } from "./renderer";
 import { createTextures } from "./textures";
 import { createInput } from "./input";
 import { createAdmin } from "./admin";
+
+inject();
+injectSpeedInsights();
 
 // Two views. Roaming: the scattered, wrapping canvas, capped so a couple of
 // works always stay in sight. The strip: click a work and the canvas becomes
