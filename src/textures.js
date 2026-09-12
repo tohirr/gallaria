@@ -1,13 +1,14 @@
 import { withSlot } from "./lib/loadQueue";
 
 // Resolution ladder. Each rung is a real network request, so the pixelation
-// IS the loading state. 16 and 64 are resident for every item (a few KB
-// each); 512 is streamed in around the viewport and evicted by distance;
-// 1600 is only fetched for the focused item.
+// IS the loading state. The loader climbs every work to 512 before the
+// gallery opens (16, then 64, then 512, with real progress), and 512 stays
+// resident for all of them so the globe is never pixelated; 1600 is only
+// fetched for the focused item.
 export const TIERS = [16, 64, 512, 1600];
 const MID = 512;
 const HI = 1600;
-const MID_BUDGET = 72; // resident 512px textures (~1.3MB each with mips)
+const MID_BUDGET = 400; // resident 512px textures (~1MB each with mips): room for the whole catalog
 const DISSOLVE_MS = 450;
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -115,13 +116,15 @@ export function createTextures(gl, items) {
       return state.get(item);
     },
 
-    // Every 16px rung, reporting progress; then every 64px rung in the background.
+    // Every work up the ladder to 512, rung by rung, reporting real progress:
+    // the loading screen is where the quality gets paid for.
     async bootstrap(onProgress) {
+      const rungs = [16, 64, MID];
+      const total = items.length * rungs.length;
       let n = 0;
-      await Promise.all(
-        items.map((it) => ensure(it, 16).then(() => onProgress(++n / items.length)))
-      );
-      items.forEach((it) => ensure(it, 64));
+      for (const tier of rungs) {
+        await Promise.all(items.map((it) => ensure(it, tier).then(() => onProgress(++n / total))));
+      }
     },
 
     // Advance dissolves. Returns true while anything is still animating.

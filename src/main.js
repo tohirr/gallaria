@@ -618,7 +618,9 @@ async function boot() {
 
     if (dirty || busy) {
       camera.wrap();
-      renderer.draw(camera, items, textures, { hovered, focused, flat, flatAll: mode === "strip", dim });
+      // the globe's rim frost fades out on the way into the strip and back in on the way out
+      const frost = mode === "strip" ? 0 : mode === "roam" ? 1 : 1 - dim;
+      renderer.draw(camera, items, textures, { hovered, focused, flat, flatAll: mode === "strip", dim, frost });
       dirty = false;
 
       const z = `${Math.round(camera.zoom * 100)}%`;

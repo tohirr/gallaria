@@ -1,6 +1,13 @@
 import { BLOCK } from "./layout";
 import { BULGE, TANGENT, flatEase } from "./camera";
 
+// The frost: in the globe the field is drawn into a texture and put on
+// screen through a blur whose radius grows from nothing at the centre to
+// BLUR_PX at the edge midpoints, like looking through a lens. The strip is
+// drawn straight to the screen, sharp.
+const BLUR_PX = 9; // css px of blur at the rim
+const RIM_MILK = 0.22; // how far the frosted rim sinks toward the page colour
+
 // 8x8 Bayer matrix — the classic ordered-dither threshold map. Uploaded as a
 // tiny texture so the fragment shader can dissolve between rungs in world-space
 // blocks without dynamic array indexing.
@@ -76,6 +83,47 @@ void main() {
   o = vec4(mix(uBg, col * vShade, uAlpha), 1.0);
 }`;
 
+const FROST_VS = `#version 300 es
+out vec2 vUv;
+void main() {
+  vec2 p = vec2(float((gl_VertexID & 1) << 2), float((gl_VertexID & 2) << 1));
+  vUv = p * 0.5;
+  gl_Position = vec4(p - 1.0, 0.0, 1.0);
+}`;
+
+// A ring of taps over a mip-biased sample keeps a wide radius smooth. r² is
+// 1 at the edge midpoints and 2 in the corners: full frost from the edge
+// outward, tapering in toward a clear centre.
+const FROST_FS = `#version 300 es
+precision mediump float;
+uniform sampler2D uScene;
+uniform vec2 uView;   // css px
+uniform float uDpr;
+uniform vec3 uBg;     // the page colour, for the rim to sink into
+uniform float uFrost; // 0 clear .. 1 full
+in vec2 vUv;
+out vec4 o;
+float bias;
+vec3 tap(vec2 uv) { return texture(uScene, uv, bias).rgb; }
+void main() {
+  vec2 n = vUv * 2.0 - 1.0;
+  float amt = smoothstep(0.45, 1.15, dot(n, n)) * uFrost;
+  float radPx = amt * ${BLUR_PX.toFixed(1)};
+  bias = log2(max(1.0, radPx * uDpr * 0.6));
+  vec2 r = radPx / uView;
+  vec3 col = tap(vUv) * 2.0;
+  float wsum = 2.0;
+  for (int i = 0; i < 8; i++) {
+    float a = float(i) * 0.7853982;
+    vec2 d = vec2(cos(a), sin(a));
+    col += tap(vUv + d * r) * 0.85;
+    col += tap(vUv + d * r * 0.5 + vec2(-d.y, d.x) * r * 0.2) * 1.0;
+    wsum += 1.85;
+  }
+  col /= wsum;
+  o = vec4(mix(col, uBg, ${RIM_MILK.toFixed(2)} * amt), 1.0);
+}`;
+
 function compile(gl, type, src) {
   const sh = gl.createShader(type);
   gl.shaderSource(sh, src);
@@ -113,6 +161,26 @@ export function createRenderer(canvas) {
     "uRect", "uCam", "uZoom", "uView", "uTexA", "uTexB", "uBayer", "uT", "uAlpha", "uBlocks",
     "uSeg", "uBulge", "uTangent", "uBg",
   ]);
+  const frost = program(gl, FROST_VS, FROST_FS, ["uScene", "uView", "uDpr", "uBg", "uFrost"]);
+  gl.useProgram(frost.p);
+  gl.uniform1i(frost.u.uScene, 3);
+
+  // The scene as a texture for the frost pass. The field is drawn into a
+  // multisampled buffer first (the dome tilts every edge) and resolved into
+  // the texture, whose mip chain the wide blur samples.
+  const sceneTex = gl.createTexture();
+  const sceneFbo = gl.createFramebuffer();
+  const msaaRb = gl.createRenderbuffer();
+  const msaaFbo = gl.createFramebuffer();
+  const samples = Math.min(4, gl.getParameter(gl.MAX_SAMPLES));
+  gl.activeTexture(gl.TEXTURE3);
+  gl.bindTexture(gl.TEXTURE_2D, sceneTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  // (both are attached in resize(), once they have storage: WebKit rejects
+  // attaching a renderbuffer that has none yet, and the attachment never takes)
 
   const bayer = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, bayer);
@@ -142,6 +210,8 @@ export function createRenderer(canvas) {
       gl.clearColor(r, g, b, 1);
       gl.useProgram(quad.p);
       gl.uniform3f(quad.u.uBg, r, g, b);
+      gl.useProgram(frost.p);
+      gl.uniform3f(frost.u.uBg, r, g, b);
     },
 
     resize(vw, vh) {
@@ -149,16 +219,32 @@ export function createRenderer(canvas) {
       canvas.width = Math.round(vw * dpr);
       canvas.height = Math.round(vh * dpr);
       gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.activeTexture(gl.TEXTURE3);
+      gl.bindTexture(gl.TEXTURE_2D, sceneTex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, msaaRb);
+      gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.RGBA8, canvas.width, canvas.height);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, sceneFbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, sceneTex, 0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, msaaFbo);
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, msaaRb);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.useProgram(frost.p);
+      gl.uniform1f(frost.u.uDpr, dpr);
+      gl.uniform2f(frost.u.uView, vw, vh);
     },
 
     // Draw every wrapped copy of every item that intersects the viewport.
     // `flat` names the work being lifted off (or set back onto) the dome and how
     // far along it is; `flatAll` lifts everything (the strip); `dim` fades every
-    // work except the focused one and the one in `flat`.
-    draw(camera, items, textures, { hovered, focused, flat, flatAll, dim }) {
+    // work except the focused one and the one in `flat`; `frost` (0..1) is how
+    // much the rim blurs — the globe's lens, gone in the strip.
+    draw(camera, items, textures, { hovered, focused, flat, flatAll, dim, frost: frostAmt = 0 }) {
       const { tileW, tileH } = camera.tile;
       const { x0, y0, x1, y1 } = camera.bounds();
 
+      const frosted = frostAmt > 0.001;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, frosted ? msaaFbo : null);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
       gl.useProgram(quad.p);
@@ -201,6 +287,20 @@ export function createRenderer(canvas) {
             draws++;
           }
         }
+      }
+
+      if (frosted) {
+        // resolve the multisampled field into the scene texture, then the frost
+        gl.bindFramebuffer(gl.READ_FRAMEBUFFER, msaaFbo);
+        gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, sceneFbo);
+        gl.blitFramebuffer(0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height, gl.COLOR_BUFFER_BIT, gl.NEAREST);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.activeTexture(gl.TEXTURE3);
+        gl.bindTexture(gl.TEXTURE_2D, sceneTex);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.useProgram(frost.p);
+        gl.uniform1f(frost.u.uFrost, frostAmt);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
       }
       return draws;
     },
