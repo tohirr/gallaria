@@ -1,8 +1,8 @@
 # gallaria
 
-An infinite, wrapping canvas of art by African artists. Drag to pan, scroll or
-pinch to zoom, click a work to focus it. Every attributed work links to the
-artist and to the tweet it came from.
+An infinite, wrapping canvas of African visual culture found on the timeline.
+Drag to pan, scroll or pinch to zoom, then click a work to focus it. Every
+attributed work links to its creator and to the tweet it came from.
 
 No framework: one WebGL2 context, a handful of ES modules, Vite for the dev
 server and build, and two Vercel functions (`api/catalog.js`, `api/link.js`).

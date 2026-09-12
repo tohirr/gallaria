@@ -65,14 +65,21 @@
     return placed;
   }
 
-  const load = (src) => new Promise((res, rej) => { const img = new Image(); img.crossOrigin = "anonymous"; img.onload = () => res(img); img.onerror = rej; img.src = src; });
+  const load = (src) => new Promise((res, rej) => {
+    const img = new Image();
+    const timer = setTimeout(() => { img.src = ""; rej(new Error("image timed out")); }, 8000);
+    img.crossOrigin = "anonymous";
+    img.onload = () => { clearTimeout(timer); res(img); };
+    img.onerror = (err) => { clearTimeout(timer); rej(err); };
+    img.src = src;
+  });
 
-  async function render(canvas, works, images, total) {
+  async function render(canvas, works, images) {
     const W = canvas.width, H = canvas.height;
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, H);
-    const cards = scatter(works, W, H, { w: 520, h: 150 });
+    const cards = scatter(works, W, H, { w: 680, h: 150 });
     // far cards first so nearer, sharper ones sit on top if anything grazes
     cards.sort((a, b) => b.r2 - a.r2);
     for (const c of cards) {
@@ -116,7 +123,7 @@
     ctx.fillStyle = DIM;
     ctx.font = '22px "SF Mono", Menlo, ui-monospace, Consolas, monospace';
     ctx.letterSpacing = "1px";
-    ctx.fillText(`art by africans · ${total} works`, W / 2, H / 2 + 52);
+    ctx.fillText("african visual culture, found on the timeline", W / 2, H / 2 + 52);
     ctx.textAlign = "left";
     ctx.font = '16px "SF Mono", Menlo, ui-monospace, Consolas, monospace';
     ctx.fillText("gallaria.tohirr.dev", 28, H - 26);
@@ -130,9 +137,14 @@
   const chosen = [...catalog]
     .sort((a, b) => Number(b.context?.artist_name != null) - Number(a.context?.artist_name != null) || pick() - 0.5)
     .slice(0, WORKS);
-  const images = new Map(await Promise.all(chosen.map(async (w) => [w.public_id, await load(rungUrl(w, RUNG))])));
-  const n1 = await render(document.getElementById("og"), chosen, images, catalog.length);
-  const n2 = await render(document.getElementById("twitter"), chosen, images, catalog.length);
+  const loaded = await Promise.all(chosen.map(async (w) => {
+    try { return [w.public_id, await load(rungUrl(w, RUNG))]; }
+    catch { return null; }
+  }));
+  const images = new Map(loaded.filter(Boolean));
+  const drawable = chosen.filter((w) => images.has(w.public_id));
+  const n1 = await render(document.getElementById("og"), drawable, images);
+  const n2 = await render(document.getElementById("twitter"), drawable, images);
   status.textContent = `og: ${n1} works · twitter: ${n2} works · catalog ${catalog.length}`;
 
   const post = params.get("post");
