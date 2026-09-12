@@ -3,6 +3,30 @@ const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 export const MAX_ZOOM = 4;
 
+// The surface bulges toward the viewer like a shallow dome pinned to the
+// screen: content slides over it as you pan. In normalised screen coords
+// n ∈ [-1,1]² a point at radius r is pushed out by z = BULGE·(1 − r²) and
+// perspective-divided, so the centre is magnified and the edges recede.
+// Beyond DOME_R2 the height is held flat so far-off vertices never fold back.
+export const BULGE = 0.04;
+const DOME_R2 = 4;
+export const CENTER_SCALE = 1 / (1 - BULGE);
+
+export function domeScale(r2) {
+  return 1 / (1 - BULGE * (1 - Math.min(r2, DOME_R2)));
+}
+
+// Inverse of the dome warp: distorted radius r' → undistorted radius r.
+// r' = r / (1 − b + b·r²)  ⇒  b·r'·r² − r + r'(1 − b) = 0
+function undomeRadius(rp) {
+  if (rp < 1e-6) return rp;
+  const flatR = Math.sqrt(DOME_R2);
+  if (rp >= flatR * domeScale(DOME_R2)) return rp / domeScale(DOME_R2);
+  const b = BULGE;
+  const disc = Math.max(0, 1 - 4 * b * rp * rp * (1 - b));
+  return (1 - Math.sqrt(disc)) / (2 * b * rp);
+}
+
 // Camera over the wrapping plane. (x, y) is the world point at the viewport
 // centre; zoom is CSS pixels per world unit.
 export class Camera {
@@ -32,16 +56,22 @@ export class Camera {
     this.y = mod(this.y, this.tile.tileH);
   }
 
+  // Screen point → world point, undoing the dome warp first.
   screenToWorld(sx, sy) {
+    const nx = (sx - this.vw / 2) / (this.vw / 2);
+    const ny = (sy - this.vh / 2) / (this.vh / 2);
+    const rp = Math.hypot(nx, ny);
+    const k = rp < 1e-6 ? 1 : undomeRadius(rp) / rp;
     return {
-      x: this.x + (sx - this.vw / 2) / this.zoom,
-      y: this.y + (sy - this.vh / 2) / this.zoom,
+      x: this.x + (nx * k * this.vw) / 2 / this.zoom,
+      y: this.y + (ny * k * this.vh) / 2 / this.zoom,
     };
   }
 
+  // Drag feels 1:1 at the centre of the dome, where the surface is magnified.
   panByScreen(dx, dy) {
-    this.x -= dx / this.zoom;
-    this.y -= dy / this.zoom;
+    this.x -= dx / (this.zoom * CENTER_SCALE);
+    this.y -= dy / (this.zoom * CENTER_SCALE);
   }
 
   setZoom(z) {
@@ -66,10 +96,11 @@ export class Camera {
     return { dx, dy };
   }
 
-  // World-space viewport bounds.
+  // World-space viewport bounds. The dome shrinks the corners (scale
+  // 1/(1+BULGE) at r²=2), so a little more world peeks in there.
   bounds() {
-    const hw = this.vw / (2 * this.zoom);
-    const hh = this.vh / (2 * this.zoom);
+    const hw = ((1 + BULGE) * this.vw) / (2 * this.zoom);
+    const hh = ((1 + BULGE) * this.vh) / (2 * this.zoom);
     return { x0: this.x - hw, y0: this.y - hh, x1: this.x + hw, y1: this.y + hh };
   }
 }

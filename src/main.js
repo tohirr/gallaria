@@ -2,7 +2,7 @@ import "./style.css";
 import { createLoader } from "./loader";
 import { loadCatalog } from "./catalog";
 import { layout, hitTest } from "./layout";
-import { Camera, MAX_ZOOM } from "./camera";
+import { Camera, MAX_ZOOM, CENTER_SCALE } from "./camera";
 import { createRenderer } from "./renderer";
 import { createTextures } from "./textures";
 import { createInput } from "./input";
@@ -116,7 +116,7 @@ async function boot() {
   function flyTo(item, animate) {
     const { x, y, w, h } = item.rect;
     const { dx, dy } = camera.delta(x + w / 2, y + h / 2);
-    const zoom = Math.min(MAX_ZOOM, 0.82 * Math.min(camera.vw / w, camera.vh / h));
+    const zoom = Math.min(MAX_ZOOM, (0.82 / CENTER_SCALE) * Math.min(camera.vw / w, camera.vh / h));
     const to = { x: camera.x + dx, y: camera.y + dy, zoom };
     if (!animate || reduceMotion) {
       Object.assign(camera, to);

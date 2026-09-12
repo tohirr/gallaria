@@ -1,4 +1,5 @@
 import { BLOCK } from "./layout";
+import { BULGE } from "./camera";
 
 // 8x8 Bayer matrix — the classic ordered-dither threshold map. Uploaded as a
 // tiny texture so the fragment shader can dissolve between rungs in world-space
@@ -14,19 +15,32 @@ const BAYER_8 = [
   63, 31, 55, 23, 61, 29, 53, 21,
 ];
 
+// Each quad is drawn as a uSeg×uSeg grid of cells (6 vertices per cell,
+// generated from gl_VertexID) so the dome warp below bends it smoothly.
+// The warp mirrors domeScale() in camera.js: keep the two in sync.
 const QUAD_VS = `#version 300 es
 uniform vec4 uRect;   // x, y, w, h in world units
 uniform vec2 uCam;    // world point at viewport centre
 uniform float uZoom;  // css px per world unit
 uniform vec2 uView;   // viewport in css px
+uniform int uSeg;     // subdivisions per axis
+uniform float uBulge;
 out vec2 vUv;
+out float vShade;
 void main() {
   int i = gl_VertexID;
-  vec2 p = vec2(float(i == 1 || i == 2 || i == 4), float(i == 2 || i == 4 || i == 5));
+  int c = i % 6;
+  int q = i / 6;
+  vec2 corner = vec2(float(c == 1 || c == 2 || c == 4), float(c == 2 || c == 4 || c == 5));
+  vec2 cell = vec2(float(q % uSeg), float(q / uSeg));
+  vec2 p = (cell + corner) / float(uSeg);
   vUv = p;
   vec2 screen = (uRect.xy + p * uRect.zw - uCam) * uZoom + uView * 0.5;
-  vec2 ndc = screen / uView * 2.0 - 1.0;
-  gl_Position = vec4(ndc.x, -ndc.y, 0.0, 1.0);
+  vec2 n = screen / uView * 2.0 - 1.0;
+  float r2 = min(dot(n, n), 4.0);
+  n /= 1.0 - uBulge * (1.0 - r2);
+  vShade = mix(1.0, 0.9, smoothstep(0.0, 2.0, r2));
+  gl_Position = vec4(n.x, -n.y, 0.0, 1.0);
 }`;
 
 const QUAD_FS = `#version 300 es
@@ -38,6 +52,7 @@ uniform float uT;      // dissolve progress: blocks whose threshold < uT show B
 uniform float uAlpha;
 uniform vec2 uBlocks;  // dissolve blocks across the quad
 in vec2 vUv;
+in float vShade;
 out vec4 o;
 void main() {
   vec2 b = mod(floor(vUv * uBlocks), 8.0);
@@ -45,34 +60,7 @@ void main() {
   vec3 a = texture(uTexA, vUv).rgb;
   vec3 c = texture(uTexB, vUv).rgb;
   vec3 col = th < uT ? c : a;
-  o = vec4(col * uAlpha, 1.0);
-}`;
-
-const BG_VS = `#version 300 es
-void main() {
-  int i = gl_VertexID;
-  vec2 p = vec2(i == 1 ? 3.0 : -1.0, i == 2 ? 3.0 : -1.0);
-  gl_Position = vec4(p, 0.0, 1.0);
-}`;
-
-// Dot grid pinned to world space, fading out as the cells get too small.
-const BG_FS = `#version 300 es
-precision mediump float;
-uniform vec2 uCam;
-uniform float uZoom;
-uniform vec2 uView;
-uniform float uDpr;
-out vec4 o;
-void main() {
-  vec2 screen = gl_FragCoord.xy / uDpr;
-  screen.y = uView.y - screen.y;
-  vec2 world = (screen - uView * 0.5) / uZoom + uCam;
-  const float cell = 64.0;
-  vec2 g = (fract(world / cell + 0.5) - 0.5) * cell * uZoom;
-  float d = length(g);
-  float dot = smoothstep(1.6, 0.4, d) * clamp((cell * uZoom - 10.0) / 20.0, 0.0, 1.0);
-  vec3 bg = vec3(0.02);
-  o = vec4(bg + dot * 0.14, 1.0);
+  o = vec4(col * uAlpha * vShade, 1.0);
 }`;
 
 function compile(gl, type, src) {
@@ -110,8 +98,8 @@ export function createRenderer(canvas) {
 
   const quad = program(gl, QUAD_VS, QUAD_FS, [
     "uRect", "uCam", "uZoom", "uView", "uTexA", "uTexB", "uBayer", "uT", "uAlpha", "uBlocks",
+    "uSeg", "uBulge",
   ]);
-  const bg = program(gl, BG_VS, BG_FS, ["uCam", "uZoom", "uView", "uDpr"]);
 
   const bayer = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, bayer);
@@ -120,23 +108,24 @@ export function createRenderer(canvas) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-  // Empty VAO: both programs generate their vertices from gl_VertexID.
+  // Empty VAO: the program generates its vertices from gl_VertexID.
   gl.bindVertexArray(gl.createVertexArray());
 
   gl.useProgram(quad.p);
   gl.uniform1i(quad.u.uTexA, 0);
   gl.uniform1i(quad.u.uTexB, 1);
   gl.uniform1i(quad.u.uBayer, 2);
+  gl.uniform1f(quad.u.uBulge, BULGE);
   gl.activeTexture(gl.TEXTURE2);
   gl.bindTexture(gl.TEXTURE_2D, bayer);
 
-  let dpr = 1;
+  gl.clearColor(0.02, 0.02, 0.02, 1);
 
   return {
     gl,
 
     resize(vw, vh) {
-      dpr = Math.min(2, devicePixelRatio || 1);
+      const dpr = Math.min(2, devicePixelRatio || 1);
       canvas.width = Math.round(vw * dpr);
       canvas.height = Math.round(vh * dpr);
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -147,12 +136,7 @@ export function createRenderer(canvas) {
       const { tileW, tileH } = camera.tile;
       const { x0, y0, x1, y1 } = camera.bounds();
 
-      gl.useProgram(bg.p);
-      gl.uniform2f(bg.u.uCam, camera.x, camera.y);
-      gl.uniform1f(bg.u.uZoom, camera.zoom);
-      gl.uniform2f(bg.u.uView, camera.vw, camera.vh);
-      gl.uniform1f(bg.u.uDpr, dpr);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.clear(gl.COLOR_BUFFER_BIT);
 
       gl.useProgram(quad.p);
       gl.uniform2f(quad.u.uCam, camera.x, camera.y);
@@ -180,11 +164,14 @@ export function createRenderer(canvas) {
         gl.uniform2f(quad.u.uBlocks, w / BLOCK, h / BLOCK);
         const alpha = item === hovered ? 0.72 : focused && item !== focused ? 0.45 : 1;
         gl.uniform1f(quad.u.uAlpha, alpha);
+        // ~one cell per 120 css px keeps the dome smooth without over-tessellating
+        const seg = Math.max(1, Math.min(24, Math.ceil((Math.max(w, h) * camera.zoom) / 120)));
+        gl.uniform1i(quad.u.uSeg, seg);
 
         for (let ky = ky0; ky <= ky1; ky++) {
           for (let kx = kx0; kx <= kx1; kx++) {
             gl.uniform4f(quad.u.uRect, x + kx * tileW, y + ky * tileH, w, h);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            gl.drawArrays(gl.TRIANGLES, 0, 6 * seg * seg);
             draws++;
           }
         }
