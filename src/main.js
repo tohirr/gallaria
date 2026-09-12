@@ -2,7 +2,7 @@ import "./style.css";
 import { createLoader } from "./loader";
 import { loadCatalog } from "./catalog";
 import { layout, hitTest } from "./layout";
-import { Camera, MAX_ZOOM } from "./camera";
+import { Camera, MAX_ZOOM, BULGE, TANGENT, flatEase, pickTangent } from "./camera";
 import { createRenderer } from "./renderer";
 import { createTextures } from "./textures";
 import { createInput } from "./input";
@@ -186,6 +186,15 @@ async function boot() {
   $("caption-close").addEventListener("click", () => setFocus(null));
 
   // --- input -------------------------------------------------------------
+  // Which work is under a screen point, through the same projection that drew it.
+  const bulgeOf = (item) => BULGE * (1 - flatEase(item === flat.item ? flat.k : 0));
+  function pick(sx, sy) {
+    if (sx < 0) return null;
+    if (TANGENT) return pickTangent(items, camera, sx, sy, bulgeOf);
+    const { x, y } = camera.screenToWorld(sx, sy);
+    return hitTest(items, tile, x, y);
+  }
+
   const hint = $("hint");
   const input = createInput(canvas, camera, {
     onInteract() {
@@ -194,8 +203,7 @@ async function boot() {
     },
     onMove: mark,
     onHover(sx, sy) {
-      const { x, y } = camera.screenToWorld(sx, sy);
-      const hit = sx < 0 ? null : hitTest(items, tile, x, y);
+      const hit = pick(sx, sy);
       if (hit !== hovered) {
         hovered = hit;
         canvas.classList.toggle("over", !!hit && !input.dragging());
@@ -203,8 +211,7 @@ async function boot() {
       }
     },
     onTap(sx, sy) {
-      const { x, y } = camera.screenToWorld(sx, sy);
-      const hit = hitTest(items, tile, x, y);
+      const hit = pick(sx, sy);
       if (hit && hit !== focused) setFocus(hit);
       else if (!hit) setFocus(null);
     },

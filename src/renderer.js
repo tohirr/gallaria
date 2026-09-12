@@ -1,5 +1,5 @@
 import { BLOCK } from "./layout";
-import { BULGE } from "./camera";
+import { BULGE, TANGENT, flatEase } from "./camera";
 
 // Frame levers. Each work gets a bevelled border lit from one angle: sides
 // facing the light go bright with a specular ridge, sides facing away go dark,
@@ -33,6 +33,7 @@ uniform float uZoom;  // css px per world unit
 uniform vec2 uView;   // viewport in css px
 uniform int uSeg;     // subdivisions per axis
 uniform float uBulge;
+uniform float uTangent; // 1: rigid card on the dome's tangent plane, 0: bent onto the dome
 out vec2 vUv;
 out float vShade;
 void main() {
@@ -45,10 +46,21 @@ void main() {
   vUv = p;
   vec2 screen = (uRect.xy + p * uRect.zw - uCam) * uZoom + uView * 0.5;
   vec2 n = screen / uView * 2.0 - 1.0;
+
+  // dome height z = b(1 - r²) at this vertex...
   float r2 = min(dot(n, n), 4.0);
-  n /= 1.0 - uBulge * (1.0 - r2);
-  vShade = mix(1.0, 0.9, smoothstep(0.0, 2.0, r2));
-  gl_Position = vec4(n.x, -n.y, 0.0, 1.0);
+  float zCurve = uBulge * (1.0 - r2);
+  // ...or of the plane tangent to the dome at the card's centre
+  vec2 cs = (uRect.xy + 0.5 * uRect.zw - uCam) * uZoom + uView * 0.5;
+  vec2 cn = cs / uView * 2.0 - 1.0;
+  float cc = dot(cn, cn);
+  float zPlane = cc < 4.0 ? uBulge * (1.0 + cc - 2.0 * dot(cn, n)) : uBulge * (1.0 - 4.0);
+  float z = min(mix(zCurve, zPlane, uTangent), 0.5);
+
+  // perspective divide by w = 1 - z: the GPU interpolates uv perspective-correctly
+  float w = 1.0 - z;
+  vShade = mix(1.0, 0.9, smoothstep(0.0, 2.0, mix(r2, min(cc, 4.0), uTangent)));
+  gl_Position = vec4(n.x, -n.y, 0.0, w);
 }`;
 
 const QUAD_FS = `#version 300 es
@@ -106,8 +118,6 @@ void main() {
   o = vec4(mix(uBg, col * vShade, uAlpha * cov), 1.0);
 }`;
 
-const easeOut = (t) => 1 - (1 - t) * (1 - t);
-
 function compile(gl, type, src) {
   const sh = gl.createShader(type);
   gl.shaderSource(sh, src);
@@ -143,7 +153,7 @@ export function createRenderer(canvas) {
 
   const quad = program(gl, QUAD_VS, QUAD_FS, [
     "uRect", "uCam", "uZoom", "uView", "uTexA", "uTexB", "uBayer", "uT", "uAlpha", "uBlocks",
-    "uSeg", "uBulge", "uBg", "uSize", "uFrame", "uRadius", "uFrameCol", "uLight",
+    "uSeg", "uBulge", "uTangent", "uBg", "uSize", "uFrame", "uRadius", "uFrameCol", "uLight",
   ]);
 
   const bayer = gl.createTexture();
@@ -164,6 +174,7 @@ export function createRenderer(canvas) {
   const rad = (LIGHT_ANGLE * Math.PI) / 180;
   gl.uniform2f(quad.u.uLight, Math.cos(rad), Math.sin(rad));
   gl.uniform1f(quad.u.uRadius, CORNER);
+  gl.uniform1f(quad.u.uTangent, TANGENT ? 1 : 0);
   gl.activeTexture(gl.TEXTURE2);
   gl.bindTexture(gl.TEXTURE_2D, bayer);
 
@@ -229,9 +240,9 @@ export function createRenderer(canvas) {
         const alpha = item === hovered ? 0.72 : focused && item !== focused ? 0.45 : 1;
         gl.uniform1f(quad.u.uAlpha, alpha);
         const k = flat && item === flat.item ? flat.k : 0;
-        gl.uniform1f(quad.u.uBulge, BULGE * (1 - easeOut(k)));
-        // ~one cell per 120 css px keeps the dome smooth without over-tessellating
-        const seg = Math.max(1, Math.min(24, Math.ceil((Math.max(w, h) * camera.zoom) / 120)));
+        gl.uniform1f(quad.u.uBulge, BULGE * (1 - flatEase(k)));
+        // a rigid card is one planar quad; a bent one needs ~a cell per 120 css px
+        const seg = TANGENT ? 1 : Math.max(1, Math.min(24, Math.ceil((Math.max(w, h) * camera.zoom) / 120)));
         gl.uniform1i(quad.u.uSeg, seg);
 
         for (let ky = ky0; ky <= ky1; ky++) {

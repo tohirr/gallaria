@@ -15,6 +15,14 @@ export const BULGE = 0.04;
 const DOME_R2 = 4;
 export const CENTER_SCALE = 1 / (1 - BULGE);
 
+// Surface lever. true: each work is a rigid flat card lying on the dome's
+// tangent plane at its centre, so it tilts away toward the edges but its
+// edges stay straight. false: the work bends with the dome itself.
+export const TANGENT = true;
+
+// How the focused work eases off the dome (k 0 → 1) into a flat card.
+export const flatEase = (k) => 1 - (1 - k) * (1 - k);
+
 export function domeScale(r2) {
   return 1 / (1 - BULGE * (1 - Math.min(r2, DOME_R2)));
 }
@@ -28,6 +36,37 @@ function undomeRadius(rp) {
   const b = BULGE;
   const disc = Math.max(0, 1 - 4 * b * rp * rp * (1 - b));
   return (1 - Math.sqrt(disc)) / (2 * b * rp);
+}
+
+// Which work is under a screen point when works are rigid cards on tangent
+// planes (see TANGENT). Each card is its own projective map, so invert it per
+// card: with n' the screen point in [-1,1]², c the card centre, and b its
+// bulge, the vertex shader does n' = n / (1 − b(1 + |c|² − 2c·n)); solving for
+// n gives n = n'·A / (1 − g·n') with A = 1 − b(1 + |c|²) and g = 2b·c.
+// `bulgeOf(item)` supplies b (the focused work flattens to 0).
+export function pickTangent(items, camera, sx, sy, bulgeOf) {
+  const hx = camera.vw / 2;
+  const hy = camera.vh / 2;
+  const npx = (sx - hx) / hx;
+  const npy = (sy - hy) / hy;
+  for (const item of items) {
+    const { x, y, w, h } = item.rect;
+    const { dx, dy } = camera.delta(x + w / 2, y + h / 2); // nearest wrapped copy
+    const cnx = (dx * camera.zoom) / hx;
+    const cny = (dy * camera.zoom) / hy;
+    const b = bulgeOf(item);
+    const cc = cnx * cnx + cny * cny;
+    let scale;
+    if (cc < DOME_R2) {
+      scale = (1 - b * (1 + cc)) / (1 - 2 * b * (cnx * npx + cny * npy));
+    } else {
+      scale = 1 + b * (DOME_R2 - 1); // dome held flat out here: plain magnification
+    }
+    const wx = (npx * scale * hx) / camera.zoom; // world offset from the camera
+    const wy = (npy * scale * hy) / camera.zoom;
+    if (Math.abs(wx - dx) <= w / 2 && Math.abs(wy - dy) <= h / 2) return item;
+  }
+  return null;
 }
 
 // Camera over the wrapping plane. (x, y) is the world point at the viewport
