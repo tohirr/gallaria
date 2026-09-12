@@ -1,0 +1,147 @@
+<!doctype html>
+<!--
+  Social preview generator: a still of the globe. Open it on the dev server
+  (http://localhost:5199/scripts/og.html) and it draws the works from the
+  catalog scattered over the near-black ground with the site's seeded
+  best-candidate placement, sharp toward the middle and frosted toward the
+  rim like the site's lens, with the wordmark in the clear centre. Right-click
+  a canvas to save it, or add ?post=http://localhost:5200 to POST the PNGs to
+  a receiver that writes public/og.png (1200×630, Open Graph) and
+  public/twitter.png (1200×600, X summary_large_image).
+-->
+<meta charset="utf-8" />
+<title>gallaria · social preview</title>
+<style>
+  body { margin: 0; padding: 24px; background: #111; color: #8a8a8a; font: 12px ui-monospace, "SF Mono", Menlo, monospace; }
+  canvas { display: block; margin: 0 0 24px; max-width: 100%; }
+  #status { margin-bottom: 16px; }
+</style>
+<div id="status">drawing…</div>
+<canvas id="og" width="1200" height="630"></canvas>
+<canvas id="twitter" width="1200" height="600"></canvas>
+<script type="module">
+  const CLOUD = "dbgxvkfqw";
+  const BG = "#050505", FG = "#e8e8e8", DIM = "#8a8a8a";
+  const WORKS = 22;          // how many works to scatter
+  const RUNG = 512;          // rung to fetch: plenty for cards this size
+  const CARD_W = [120, 172]; // card width range, biggest nearest the middle
+  const GAP = 18;            // min space between cards
+  const BLUR_PX = 6;         // blur at the rim
+  const RIM_MILK = 0.2;      // how far the rim sinks toward the ground
+  const SEED = "gallaria-og";
+
+  // fnv-1a + mulberry32: the site's own seeded randomness
+  const hash = (str) => { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); } return h >>> 0; };
+  const rng = (seed) => { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
+  const smoothstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const rungUrl = ({ public_id, format }, w) => `https://res.cloudinary.com/${CLOUD}/image/upload/c_limit,w_${w},f_jpg,q_auto/${public_id}.${format}`;
+
+  // Scatter cards over W×H, keeping a clear zone for the wordmark, by best
+  // candidate: each card takes the clearest of a batch of seeded spots.
+  function scatter(works, W, H, clear) {
+    const next = rng(hash(SEED + W + H));
+    const placed = [];
+    const clearance = (c, o) => Math.max(Math.abs(c.cx - o.cx) - (c.w + o.w) / 2, Math.abs(c.cy - o.cy) - (c.h + o.h) / 2);
+    for (const work of works) {
+      const aspect = work.width / work.height;
+      let best = null, bestClear = -Infinity;
+      for (let i = 0; i < 400; i++) {
+        const cx = next() * W, cy = next() * H;
+        const nx = (cx - W / 2) / (W / 2), ny = (cy - H / 2) / (H / 2);
+        const r2 = nx * nx + ny * ny;
+        const w = CARD_W[1] - (CARD_W[1] - CARD_W[0]) * Math.min(1, r2 / 1.4); // nearer the middle, bigger
+        const h = w / aspect;
+        const c = { cx, cy, w, h, r2, work };
+        if (Math.abs(cx - W / 2) < clear.w / 2 + w / 2 + GAP && Math.abs(cy - H / 2) < clear.h / 2 + h / 2 + GAP) continue;
+        if (cx - w / 2 < 220 && cy + h / 2 > H - 48) continue; // the url in the corner
+        if (cx - w / 2 < -w * 0.35 || cx + w / 2 > W + w * 0.35 || cy - h / 2 < -h * 0.35 || cy + h / 2 > H + h * 0.35) continue;
+        let clr = Infinity;
+        for (const o of placed) clr = Math.min(clr, clearance(c, o));
+        if (clr >= GAP && clr > bestClear) { best = c; bestClear = clr; }
+        if (best && i >= 60) break;
+      }
+      if (best) placed.push(best);
+    }
+    return placed;
+  }
+
+  const load = (src) => new Promise((res, rej) => { const img = new Image(); img.crossOrigin = "anonymous"; img.onload = () => res(img); img.onerror = rej; img.src = src; });
+
+  async function render(canvas, works, images, total) {
+    const W = canvas.width, H = canvas.height;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, W, H);
+    const cards = scatter(works, W, H, { w: 520, h: 150 });
+    // far cards first so nearer, sharper ones sit on top if anything grazes
+    cards.sort((a, b) => b.r2 - a.r2);
+    for (const c of cards) {
+      const img = images.get(c.work.public_id);
+      const x = Math.round(c.cx - c.w / 2), y = Math.round(c.cy - c.h / 2), w = Math.round(c.w), h = Math.round(c.h);
+      const amt = smoothstep(0.45, 1.15, c.r2);
+      if (amt < 0.02) {
+        ctx.drawImage(img, x, y, w, h);
+      } else {
+        // the frost: shrink the card by the blur radius and scale it back up
+        // through bilinear filtering, twice — a cheap, even blur
+        const r = amt * BLUR_PX;
+        const k = Math.max(1, 1 + r * 0.9);
+        const small = document.createElement("canvas");
+        small.width = Math.max(2, Math.round(w / k));
+        small.height = Math.max(2, Math.round(h / k));
+        const sctx = small.getContext("2d");
+        sctx.imageSmoothingQuality = "high";
+        sctx.drawImage(img, 0, 0, small.width, small.height);
+        const mid = document.createElement("canvas");
+        mid.width = Math.round(w / Math.sqrt(k));
+        mid.height = Math.round(h / Math.sqrt(k));
+        const mctx = mid.getContext("2d");
+        mctx.imageSmoothingQuality = "high";
+        mctx.drawImage(small, 0, 0, mid.width, mid.height);
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(mid, x, y, w, h);
+        ctx.save();
+        ctx.globalAlpha = RIM_MILK * amt;
+        ctx.fillStyle = BG;
+        ctx.fillRect(x, y, w, h);
+        ctx.restore();
+      }
+    }
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = FG;
+    ctx.font = '84px "SF Mono", Menlo, ui-monospace, Consolas, monospace';
+    ctx.letterSpacing = "-2px";
+    ctx.fillText("gallaria", W / 2, H / 2 + 6);
+    ctx.fillStyle = DIM;
+    ctx.font = '22px "SF Mono", Menlo, ui-monospace, Consolas, monospace';
+    ctx.letterSpacing = "1px";
+    ctx.fillText(`art by africans · ${total} works`, W / 2, H / 2 + 52);
+    ctx.textAlign = "left";
+    ctx.font = '16px "SF Mono", Menlo, ui-monospace, Consolas, monospace';
+    ctx.fillText("gallaria.tohirr.dev", 28, H - 26);
+    return cards.length;
+  }
+
+  const status = document.getElementById("status");
+  const params = new URLSearchParams(location.search);
+  const catalog = (await (await fetch(params.get("catalog") || "/api/catalog")).json()).filter((w) => w.width && w.height);
+  const pick = rng(hash(SEED));
+  const chosen = [...catalog]
+    .sort((a, b) => Number(b.context?.artist_name != null) - Number(a.context?.artist_name != null) || pick() - 0.5)
+    .slice(0, WORKS);
+  const images = new Map(await Promise.all(chosen.map(async (w) => [w.public_id, await load(rungUrl(w, RUNG))])));
+  const n1 = await render(document.getElementById("og"), chosen, images, catalog.length);
+  const n2 = await render(document.getElementById("twitter"), chosen, images, catalog.length);
+  status.textContent = `og: ${n1} works · twitter: ${n2} works · catalog ${catalog.length}`;
+
+  const post = params.get("post");
+  if (post) {
+    for (const id of ["og", "twitter"]) {
+      const blob = await new Promise((r) => document.getElementById(id).toBlob(r, "image/png"));
+      const res = await fetch(`${post}/${id}.png`, { method: "POST", body: blob });
+      status.textContent += ` · ${id}.png ${res.ok ? "saved" : "FAILED " + res.status}`;
+    }
+  }
+  window.__og = { ok: true, status: status.textContent };
+</script>
