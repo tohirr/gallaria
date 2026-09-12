@@ -1,6 +1,14 @@
 import { BLOCK } from "./layout";
 import { BULGE } from "./camera";
 
+// Frame levers. Each work gets a bevelled border lit from one angle: sides
+// facing the light go bright with a specular ridge, sides facing away go dark,
+// and the corners mitre where they meet.
+const FRAME = 2.5; // border width in world units (a work is 320 wide)
+const FRAME_MIN_PX = 1.5; // never thinner than this on screen when zoomed out
+const CORNER = 8; // outer corner radius in world units (0 for square)
+const LIGHT_ANGLE = -135; // degrees, screen convention: 0 = from the right, -90 = from the top
+
 // 8x8 Bayer matrix — the classic ordered-dither threshold map. Uploaded as a
 // tiny texture so the fragment shader can dissolve between rungs in world-space
 // blocks without dynamic array indexing.
@@ -49,19 +57,56 @@ uniform sampler2D uTexA;
 uniform sampler2D uTexB;
 uniform sampler2D uBayer;
 uniform float uT;      // dissolve progress: blocks whose threshold < uT show B
-uniform float uAlpha;
+uniform float uAlpha;  // 1 = opaque, lower fades toward the page background
+uniform vec3 uBg;
 uniform vec2 uBlocks;  // dissolve blocks across the quad
+uniform vec2 uSize;    // artwork w, h in world units (the quad is this plus the frame)
+uniform float uFrame;  // frame width in world units
+uniform float uRadius; // outer corner radius in world units
+uniform vec3 uFrameCol;
+uniform vec2 uLight;   // unit vector pointing toward the light, uv space (y down)
 in vec2 vUv;
 in float vShade;
 out vec4 o;
 void main() {
-  vec2 b = mod(floor(vUv * uBlocks), 8.0);
+  // position in world units from the artwork's top-left; the frame is outside it
+  vec2 p = vUv * (uSize + 2.0 * uFrame) - uFrame;
+  vec2 uv = clamp(p / uSize, 0.0, 1.0);
+
+  vec2 b = mod(floor(uv * uBlocks), 8.0);
   float th = texture(uBayer, (b + 0.5) / 8.0).r;
-  vec3 a = texture(uTexA, vUv).rgb;
-  vec3 c = texture(uTexB, vUv).rgb;
-  vec3 col = th < uT ? c : a;
-  o = vec4(col * uAlpha * vShade, 1.0);
+  vec3 a = texture(uTexA, uv).rgb;
+  vec3 c = texture(uTexB, uv).rgb;
+  vec3 art = th < uT ? c : a;
+
+  // rounded-box distance fields: dIn < 0 inside the art, dOut < 0 inside the frame
+  vec2 hs = uSize * 0.5;
+  vec2 pc = p - hs;
+  float ri = max(uRadius - uFrame, 0.0);
+  vec2 qi = abs(pc) - (hs - ri);
+  float dIn = length(max(qi, 0.0)) + min(max(qi.x, qi.y), 0.0) - ri;
+  vec2 qo = abs(pc) - (hs + uFrame - uRadius);
+  float dOut = length(max(qo, 0.0)) + min(max(qo.x, qo.y), 0.0) - uRadius;
+
+  // surface normal of the frame: axis-aligned on the sides, curving round the corners
+  vec2 n = (qi.x > 0.0 && qi.y > 0.0) ? normalize(qi) : (qi.x > qi.y ? vec2(1.0, 0.0) : vec2(0.0, 1.0));
+  n *= vec2(pc.x < 0.0 ? -1.0 : 1.0, pc.y < 0.0 ? -1.0 : 1.0);
+  float t = clamp(dIn / uFrame, 0.0, 1.0); // 0 at the art edge, 1 at the outer edge
+  float lam = dot(n, uLight);              // -1 facing away .. 1 facing the light
+  float diff = 0.5 + 0.5 * lam;
+  float ridge = 1.0 - abs(t * 2.0 - 1.0);  // bevel crest along the band centre
+  float spec = pow(max(lam, 0.0), 3.0) * 0.7 * ridge;
+  float seam = 0.55 + 0.45 * smoothstep(0.0, 0.2, t); // dark rebate against the art
+  vec3 frame = (uFrameCol * diff + spec) * seam;
+
+  float aa = fwidth(dOut);
+  float artCov = 1.0 - smoothstep(-aa, aa, dIn);
+  float cov = 1.0 - smoothstep(-aa, aa, dOut);
+  vec3 col = mix(frame, art, artCov);
+  o = vec4(mix(uBg, col * vShade, uAlpha * cov), 1.0);
 }`;
+
+const easeOut = (t) => 1 - (1 - t) * (1 - t);
 
 function compile(gl, type, src) {
   const sh = gl.createShader(type);
@@ -89,7 +134,7 @@ function program(gl, vs, fs, uniforms) {
 export function createRenderer(canvas) {
   const gl = canvas.getContext("webgl2", {
     alpha: false,
-    antialias: false,
+    antialias: true, // the dome tilts every edge off the pixel grid
     depth: false,
     stencil: false,
     powerPreference: "high-performance",
@@ -98,7 +143,7 @@ export function createRenderer(canvas) {
 
   const quad = program(gl, QUAD_VS, QUAD_FS, [
     "uRect", "uCam", "uZoom", "uView", "uTexA", "uTexB", "uBayer", "uT", "uAlpha", "uBlocks",
-    "uSeg", "uBulge",
+    "uSeg", "uBulge", "uBg", "uSize", "uFrame", "uRadius", "uFrameCol", "uLight",
   ]);
 
   const bayer = gl.createTexture();
@@ -116,13 +161,28 @@ export function createRenderer(canvas) {
   gl.uniform1i(quad.u.uTexB, 1);
   gl.uniform1i(quad.u.uBayer, 2);
   gl.uniform1f(quad.u.uBulge, BULGE);
+  const rad = (LIGHT_ANGLE * Math.PI) / 180;
+  gl.uniform2f(quad.u.uLight, Math.cos(rad), Math.sin(rad));
+  gl.uniform1f(quad.u.uRadius, CORNER);
   gl.activeTexture(gl.TEXTURE2);
   gl.bindTexture(gl.TEXTURE_2D, bayer);
 
-  gl.clearColor(0.02, 0.02, 0.02, 1);
-
   return {
     gl,
+
+    // Page background (0..1 rgb): what the frame clears to and what dimmed
+    // works fade toward. Follows the CSS --bg token so the theme can flip.
+    setBackground(r, g, b) {
+      gl.clearColor(r, g, b, 1);
+      gl.useProgram(quad.p);
+      gl.uniform3f(quad.u.uBg, r, g, b);
+    },
+
+    // Base colour of the frame around each work (0..1 rgb); lighting is applied on top.
+    setFrame(r, g, b) {
+      gl.useProgram(quad.p);
+      gl.uniform3f(quad.u.uFrameCol, r, g, b);
+    },
 
     resize(vw, vh) {
       const dpr = Math.min(2, devicePixelRatio || 1);
@@ -132,7 +192,8 @@ export function createRenderer(canvas) {
     },
 
     // Draw every wrapped copy of every item that intersects the viewport.
-    draw(camera, items, textures, { hovered, focused }) {
+    // `flat` names the work being lifted off the dome and how far along it is.
+    draw(camera, items, textures, { hovered, focused, flat }) {
       const { tileW, tileH } = camera.tile;
       const { x0, y0, x1, y1 } = camera.bounds();
 
@@ -142,6 +203,8 @@ export function createRenderer(canvas) {
       gl.uniform2f(quad.u.uCam, camera.x, camera.y);
       gl.uniform1f(quad.u.uZoom, camera.zoom);
       gl.uniform2f(quad.u.uView, camera.vw, camera.vh);
+      const frame = Math.max(FRAME, FRAME_MIN_PX / camera.zoom);
+      gl.uniform1f(quad.u.uFrame, frame);
 
       let draws = 0;
       for (const item of items) {
@@ -149,11 +212,11 @@ export function createRenderer(canvas) {
         if (!s.b) continue;
         const { x, y, w, h } = item.rect;
 
-        const kx0 = Math.ceil((x0 - x - w) / tileW);
-        const kx1 = Math.floor((x1 - x) / tileW);
+        const kx0 = Math.ceil((x0 - x - w - frame) / tileW);
+        const kx1 = Math.floor((x1 - x + frame) / tileW);
         if (kx1 < kx0) continue;
-        const ky0 = Math.ceil((y0 - y - h) / tileH);
-        const ky1 = Math.floor((y1 - y) / tileH);
+        const ky0 = Math.ceil((y0 - y - h - frame) / tileH);
+        const ky1 = Math.floor((y1 - y + frame) / tileH);
         if (ky1 < ky0) continue;
 
         gl.activeTexture(gl.TEXTURE0);
@@ -162,15 +225,18 @@ export function createRenderer(canvas) {
         gl.bindTexture(gl.TEXTURE_2D, s.b);
         gl.uniform1f(quad.u.uT, s.t);
         gl.uniform2f(quad.u.uBlocks, w / BLOCK, h / BLOCK);
+        gl.uniform2f(quad.u.uSize, w, h);
         const alpha = item === hovered ? 0.72 : focused && item !== focused ? 0.45 : 1;
         gl.uniform1f(quad.u.uAlpha, alpha);
+        const k = flat && item === flat.item ? flat.k : 0;
+        gl.uniform1f(quad.u.uBulge, BULGE * (1 - easeOut(k)));
         // ~one cell per 120 css px keeps the dome smooth without over-tessellating
         const seg = Math.max(1, Math.min(24, Math.ceil((Math.max(w, h) * camera.zoom) / 120)));
         gl.uniform1i(quad.u.uSeg, seg);
 
         for (let ky = ky0; ky <= ky1; ky++) {
           for (let kx = kx0; kx <= kx1; kx++) {
-            gl.uniform4f(quad.u.uRect, x + kx * tileW, y + ky * tileH, w, h);
+            gl.uniform4f(quad.u.uRect, x + kx * tileW - frame, y + ky * tileH - frame, w + 2 * frame, h + 2 * frame);
             gl.drawArrays(gl.TRIANGLES, 0, 6 * seg * seg);
             draws++;
           }

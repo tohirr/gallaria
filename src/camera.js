@@ -1,7 +1,10 @@
 const mod = (a, n) => ((a % n) + n) % n;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-export const MAX_ZOOM = 4;
+// Zoom lever: css px per world unit at the closest the user can get. A work
+// is 320 world units wide, so 2.5 shows it at most 800 css px across. Every
+// zoom path (wheel, pinch, keyboard, fly-to-focus) clamps to this.
+export const MAX_ZOOM = 2.5;
 
 // The surface bulges toward the viewer like a shallow dome pinned to the
 // screen: content slides over it as you pan. In normalised screen coords

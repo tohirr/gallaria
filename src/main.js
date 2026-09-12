@@ -2,13 +2,17 @@ import "./style.css";
 import { createLoader } from "./loader";
 import { loadCatalog } from "./catalog";
 import { layout, hitTest } from "./layout";
-import { Camera, MAX_ZOOM, CENTER_SCALE } from "./camera";
+import { Camera, MAX_ZOOM } from "./camera";
 import { createRenderer } from "./renderer";
 import { createTextures } from "./textures";
 import { createInput } from "./input";
 import { createAdmin } from "./admin";
 
+// Starting zoom: phones get a wider view so more than one column fits.
 const HOME_ZOOM = 0.6;
+const HOME_ZOOM_MOBILE = 0.35;
+const MOBILE_MAX_W = 520;
+const homeZoom = () => (window.innerWidth <= MOBILE_MAX_W ? HOME_ZOOM_MOBILE : HOME_ZOOM);
 const FLY_MS = 700;
 const MAINTAIN_MS = 250;
 
@@ -24,7 +28,11 @@ async function boot() {
   try {
     renderer = createRenderer(canvas);
   } catch (err) {
-    $("hint").textContent = "webgl2 is required to view gallaria";
+    // Only a missing context means the device can't run this; anything else
+    // (a shader that failed to compile, say) is our bug and should say so.
+    $("hint").textContent = /WebGL2 unavailable/.test(err.message)
+      ? "webgl2 is required to view gallaria"
+      : `renderer failed to start: ${err.message.split("\n")[0]}`;
     loader.done();
     throw err;
   }
@@ -46,6 +54,7 @@ async function boot() {
   let hovered = null;
   let focused = null;
   let fly = null; // { from, to, start }
+  const flat = { item: null, k: 0 }; // the focused work flattens off the dome: k 0 → 1
   let dirty = true;
   let lastMaintain = 0;
 
@@ -63,6 +72,22 @@ async function boot() {
   }
   window.addEventListener("resize", resize);
   resize();
+
+  // Theme: the canvas clears to the CSS --bg token, which flips with the
+  // device's light/dark preference.
+  function applyTheme() {
+    const style = getComputedStyle(document.documentElement);
+    const rgb = (token, fallback) => {
+      const m = /^#([0-9a-f]{6})$/i.exec(style.getPropertyValue(token).trim());
+      const v = m ? parseInt(m[1], 16) : fallback;
+      return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255];
+    };
+    renderer.setBackground(...rgb("--bg", 0x050505));
+    renderer.setFrame(...rgb("--frame", 0x8c8c8c));
+    mark();
+  }
+  window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", applyTheme);
+  applyTheme();
 
   // --- focus / fly-to ----------------------------------------------------
   const caption = $("caption");
@@ -82,6 +107,11 @@ async function boot() {
 
   function setFocus(item, { animate = true } = {}) {
     focused = item;
+    if (item) {
+      if (flat.item !== item) flat.k = 0; // a new work starts domed and flattens on arrival
+      flat.item = item;
+      if (!animate || reduceMotion) flat.k = 1;
+    }
     caption.hidden = !item;
     admin?.setFocus(item);
     if (item) {
@@ -116,7 +146,8 @@ async function boot() {
   function flyTo(item, animate) {
     const { x, y, w, h } = item.rect;
     const { dx, dy } = camera.delta(x + w / 2, y + h / 2);
-    const zoom = Math.min(MAX_ZOOM, (0.82 / CENTER_SCALE) * Math.min(camera.vw / w, camera.vh / h));
+    // the focused work is drawn flat, so no centre-magnification correction
+    const zoom = Math.min(MAX_ZOOM, 0.82 * Math.min(camera.vw / w, camera.vh / h));
     const to = { x: camera.x + dx, y: camera.y + dy, zoom };
     if (!animate || reduceMotion) {
       Object.assign(camera, to);
@@ -124,6 +155,18 @@ async function boot() {
       return;
     }
     fly = { from: { x: camera.x, y: camera.y, zoom: camera.zoom }, to, start: performance.now() };
+  }
+
+  // Ease the focused work flat over the fly, and back onto the dome when let go.
+  function stepFlat(dt) {
+    const target = focused && flat.item === focused ? 1 : 0;
+    if (flat.k === target) {
+      if (!target) flat.item = null;
+      return false;
+    }
+    const step = reduceMotion ? 1 : dt / FLY_MS;
+    flat.k = target ? Math.min(1, flat.k + step) : Math.max(0, flat.k - step);
+    return true;
   }
 
   function stepFly(now) {
@@ -169,7 +212,7 @@ async function boot() {
       setFocus(null);
       fly = {
         from: { x: camera.x, y: camera.y, zoom: camera.zoom },
-        to: { x: camera.x, y: camera.y, zoom: HOME_ZOOM },
+        to: { x: camera.x, y: camera.y, zoom: homeZoom() },
         start: performance.now(),
       };
     },
@@ -179,7 +222,7 @@ async function boot() {
   });
 
   // --- initial view ------------------------------------------------------
-  camera.setZoom(HOME_ZOOM);
+  camera.setZoom(homeZoom());
   const hash = decodeURIComponent(location.hash.slice(1));
   const linked = hash && items.find((it) => it.public_id === hash);
   if (linked) {
@@ -204,6 +247,7 @@ async function boot() {
 
     let busy = false;
     busy = stepFly(now) || busy;
+    busy = stepFlat(dt) || busy;
     busy = input.tick(dt) || busy;
     busy = textures.update(dt) || busy;
 
@@ -214,7 +258,7 @@ async function boot() {
 
     if (dirty || busy) {
       camera.wrap();
-      renderer.draw(camera, items, textures, { hovered, focused });
+      renderer.draw(camera, items, textures, { hovered, focused, flat });
       dirty = false;
 
       const z = `${Math.round(camera.zoom * 100)}%`;

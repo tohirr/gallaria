@@ -1,9 +1,31 @@
 :root {
+  color-scheme: dark;
   --bg: #050505;
   --fg: #e8e8e8;
   --dim: #6b6b6b;
+  --line: #222;
+  --line-strong: #444;
+  --raised: #1a1a1a;
+  --panel: rgba(5, 5, 5, 0.8);
+  --sheet: #fff;   /* loader: sheet colour fills with --bg from the top */
+  --frame: #8c8c8c; /* canvas: base colour of the lit frame around each work */
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --pad: max(14px, env(safe-area-inset-top));
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --bg: #f4f4f2;
+    --fg: #141414;
+    --dim: #8a8a8a;
+    --line: #d8d8d6;
+    --line-strong: #b4b4b2;
+    --raised: #e6e6e3;
+    --panel: rgba(244, 244, 242, 0.85);
+    --sheet: #000;
+    --frame: #7c7c7a;
+  }
 }
 
 html, body {
@@ -60,15 +82,15 @@ html, body {
   gap: 14px;
   align-items: center;
   padding: 8px 12px;
-  background: rgba(5, 5, 5, 0.8);
-  border: 1px solid #222;
+  background: var(--panel);
+  border: 1px solid var(--line);
   pointer-events: auto;
   max-width: calc(100vw - 2 * var(--pad));
 }
 #caption[hidden] { display: none; }
 #caption-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #caption-title.legacy { color: var(--dim); }
-#caption a { color: var(--fg); text-decoration: none; border-bottom: 1px solid #444; }
+#caption a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--line-strong); }
 #caption a:hover { border-color: var(--fg); }
 #caption a[hidden] { display: none; }
 
@@ -83,8 +105,8 @@ html, body {
   gap: 8px;
   align-items: center;
   padding: 6px 8px;
-  background: rgba(5, 5, 5, 0.85);
-  border: 1px solid #333;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
   pointer-events: auto;
   max-width: calc(100vw - 2 * var(--pad));
 }
@@ -93,7 +115,7 @@ html, body {
   all: unset;
   font: inherit;
   padding: 4px 8px;
-  border: 1px solid #333;
+  border: 1px solid var(--line-strong);
   color: var(--fg);
 }
 #admin input:focus { border-color: var(--fg); }
@@ -101,9 +123,9 @@ html, body {
 #admin-photos { display: inline-flex; }
 #admin #admin-photos button { width: 2ch; text-align: center; color: var(--dim); }
 #admin #admin-photos button + button { border-left: 0; }
-#admin #admin-photos button[aria-pressed="true"] { color: var(--fg); background: #222; }
+#admin #admin-photos button[aria-pressed="true"] { color: var(--fg); background: var(--raised); }
 #admin button { cursor: pointer; }
-#admin button:hover { background: #1a1a1a; }
+#admin button:hover { background: var(--raised); }
 #admin-target, #admin-status { color: var(--dim); white-space: nowrap; }
 #admin.busy { opacity: 0.5; pointer-events: none; }
 #admin [hidden] { display: none; } /* `all: unset` above would otherwise undo [hidden] */
@@ -117,20 +139,22 @@ html, body {
 }
 #caption-close:hover { color: var(--fg); }
 
-/* Intro loader: a white sheet that fills black from the top as real progress
-   arrives (catalog fetch, then the first rung of every image). */
+/* Intro loader: a contrasting sheet that fills with the page background from
+   the top as real progress arrives (catalog fetch, then the first rung of
+   every image). The percentage uses exclusion blending so it reads in both
+   themes without its own colour swap. */
 #loader {
   position: fixed;
   inset: 0;
   z-index: 10;
   display: grid;
   place-items: center;
-  background: #000;
+  background: var(--bg);
   transition: opacity 0.5s ease-in-out;
 }
 #loader.done { opacity: 0; pointer-events: none; }
-#loader .sheet { position: absolute; inset: 0; background: #fff; }
-#loader .fill { background: #000; height: 0%; transition: height 0.3s ease-out; }
+#loader .sheet { position: absolute; inset: 0; background: var(--sheet); }
+#loader .fill { background: var(--bg); height: 0%; transition: height 0.3s ease-out; }
 #loader .pct {
   position: relative;
   margin: 0;
