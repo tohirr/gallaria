@@ -213,13 +213,14 @@ async function boot() {
     const artist = $("caption-artist");
     const source = $("caption-source");
     if (item.artist) {
+      // the handle, as on X: the profile link is the attribution
       title.textContent = "";
-      artist.textContent = item.artist.name;
+      artist.textContent = `@${item.artist.handle}`;
       artist.href = `https://x.com/${item.artist.handle}`;
       artist.hidden = false;
       source.href = item.tweet;
       source.hidden = !item.tweet;
-      document.title = `${item.artist.name} · gallaria`;
+      document.title = `@${item.artist.handle} · gallaria`;
     } else {
       // "african-art/bad_oats_b2qeuf" → "bad_oats"
       title.textContent = item.public_id.split("/").pop().replace(/_[a-z0-9]{6}$/i, "");
@@ -460,7 +461,6 @@ async function boot() {
     setFocus(items[(i + dir + items.length) % items.length]);
   }
 
-  $("caption-close").addEventListener("click", exitStrip);
   const hint = $("hint");
 
   // --- view switch -------------------------------------------------------

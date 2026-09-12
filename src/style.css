@@ -152,15 +152,6 @@ html, body {
 #admin-target, #admin-status { color: var(--dim); white-space: nowrap; }
 #admin.busy { opacity: 0.5; pointer-events: none; }
 #admin [hidden] { display: none; } /* `all: unset` above would otherwise undo [hidden] */
-#caption-close {
-  all: unset;
-  cursor: pointer;
-  color: var(--dim);
-  padding: 0 4px;
-  font-size: 14px;
-  line-height: 1;
-}
-#caption-close:hover { color: var(--fg); }
 
 /* Intro loader: a contrasting sheet that fills with the page background from
    the top as real progress arrives (catalog fetch, then the first rung of
