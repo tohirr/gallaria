@@ -7,6 +7,7 @@ import { BULGE, TANGENT, flatEase } from "./camera";
 // drawn straight to the screen, sharp.
 const BLUR_PX = 9; // css px of blur at the rim
 const RIM_MILK = 0.22; // how far the frosted rim sinks toward the page colour
+const HOVER_SCALE = 0.05; // how much a work grows under the pointer in the globe
 
 // 8x8 Bayer matrix — the classic ordered-dither threshold map. Uploaded as a
 // tiny texture so the fragment shader can dissolve between rungs in world-space
@@ -238,8 +239,9 @@ export function createRenderer(canvas) {
     // `flat` names the work being lifted off (or set back onto) the dome and how
     // far along it is; `flatAll` lifts everything (the strip); `dim` fades every
     // work except the focused one and the one in `flat`; `frost` (0..1) is how
-    // much the rim blurs — the globe's lens, gone in the strip.
-    draw(camera, items, textures, { hovered, focused, flat, flatAll, dim, frost: frostAmt = 0 }) {
+    // much the rim blurs — the globe's lens, gone in the strip; `hover` maps
+    // works to how far (0..1) they have grown under the pointer.
+    draw(camera, items, textures, { focused, flat, flatAll, dim, frost: frostAmt = 0, hover }) {
       const { tileW, tileH } = camera.tile;
       const { x0, y0, x1, y1 } = camera.bounds();
 
@@ -272,8 +274,11 @@ export function createRenderer(canvas) {
         gl.uniform1f(quad.u.uT, s.t);
         gl.uniform2f(quad.u.uBlocks, w / BLOCK, h / BLOCK);
         const lead = item === focused || (flat && item === flat.item);
-        const alpha = item === hovered ? 0.72 : lead ? 1 : 1 - dim;
-        gl.uniform1f(quad.u.uAlpha, alpha);
+        gl.uniform1f(quad.u.uAlpha, lead ? 1 : 1 - dim);
+        // a hovered work swells a touch about its centre
+        const grow = HOVER_SCALE * flatEase(hover?.get(item) ?? 0);
+        const gx = (w * grow) / 2;
+        const gy = (h * grow) / 2;
         const k = flatAll ? 1 : flat && item === flat.item ? flat.k : 0;
         gl.uniform1f(quad.u.uBulge, BULGE * (1 - flatEase(k)));
         // a rigid card is one planar quad; a bent one needs ~a cell per 120 css px
@@ -282,7 +287,7 @@ export function createRenderer(canvas) {
 
         for (let ky = ky0; ky <= ky1; ky++) {
           for (let kx = kx0; kx <= kx1; kx++) {
-            gl.uniform4f(quad.u.uRect, x + kx * tileW, y + ky * tileH, w, h);
+            gl.uniform4f(quad.u.uRect, x + kx * tileW - gx, y + ky * tileH - gy, w + 2 * gx, h + 2 * gy);
             gl.drawArrays(gl.TRIANGLES, 0, 6 * seg * seg);
             draws++;
           }

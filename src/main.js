@@ -25,6 +25,7 @@ const ROAM_WORKS = 2.5; // roaming never zooms closer than this many works acros
 const FIT = 0.92; // how much of the viewport a work fills in the strip
 const PAGE_FRACTION = 0.15; // drag this much of the viewport in the strip to turn the page
 const STRIP_GAP_PX = 28; // css px between neighbours in the strip, at the current work's zoom
+const HOVER_MS = 160; // a hovered work grows (and shrinks back) over this long
 const FLY_MS = 700; // entering and leaving the strip
 const PAGE_MS = 450; // turning a page inside it by key
 const FLING_V = 6; // css px per frame: slower releases settle by distance, faster ones by momentum
@@ -124,6 +125,7 @@ async function boot() {
   const flat = { item: null, k: 0 }; // a work lifting off the dome: k 0 → 1
   let dim = 0; // how far the unfocused works have faded: 0 → 1
   let pending = null; // what finishes the current entering/leaving transition
+  const hover = new Map(); // work → how far it has grown under the pointer, 0..1
   // Strip wheel swipes: pan 1:1 while events stream, watch their speed, and
   // once the stream is either dying away (trackpad inertia) or paused, treat
   // it as a release. `wheel.v` is css px per frame along the strip.
@@ -359,6 +361,23 @@ async function boot() {
     const step = reduceMotion ? 1 : dt / FLY_MS;
     flat.k = target ? Math.min(1, flat.k + step) : Math.max(0, flat.k - step);
     return true;
+  }
+
+  // Grow the hovered work, shrink back any it left.
+  function stepHover(dt) {
+    const step = reduceMotion ? 1 : dt / HOVER_MS;
+    if (hovered && !hover.has(hovered)) hover.set(hovered, 0);
+    let busy = false;
+    for (const [item, k] of hover) {
+      const target = item === hovered ? 1 : 0;
+      if (k === target) {
+        if (!target) hover.delete(item);
+        continue;
+      }
+      hover.set(item, target ? Math.min(1, k + step) : Math.max(0, k - step));
+      busy = true;
+    }
+    return busy;
   }
 
   // Fade the unfocused works out on the way in, and back in on the way out.
@@ -606,6 +625,8 @@ async function boot() {
     }
     busy = stepFlat(dt) || busy;
     busy = stepDim(dt) || busy;
+    busy = stepHover(dt) || busy;
+    busy = textures.update(dt) || busy; // advance the rung dissolves
     const coasting = input.tick(dt);
     busy = coasting || busy;
     if (wheel.active && now > wheel.quietAt) endWheel(); // the swipe paused: release
@@ -620,7 +641,7 @@ async function boot() {
       camera.wrap();
       // the globe's rim frost fades out on the way into the strip and back in on the way out
       const frost = mode === "strip" ? 0 : mode === "roam" ? 1 : 1 - dim;
-      renderer.draw(camera, items, textures, { hovered, focused, flat, flatAll: mode === "strip", dim, frost });
+      renderer.draw(camera, items, textures, { focused, flat, flatAll: mode === "strip", dim, frost, hover });
       dirty = false;
 
       const z = `${Math.round(camera.zoom * 100)}%`;
