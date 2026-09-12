@@ -106,7 +106,7 @@ export function createTextures(gl, items) {
   function wantedTier(cssWidth, focused) {
     const px = cssWidth * Math.min(2, devicePixelRatio || 1);
     if (px <= 80) return 64;
-    if (px <= 700 || !focused) return MID;
+    if (px <= 400 || !focused) return MID; // the focused work gets the top rung once 512 would soften
     return HI;
   }
 

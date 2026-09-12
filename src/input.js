@@ -18,6 +18,7 @@ export function createInput(canvas, camera, handlers) {
   };
 
   canvas.addEventListener("pointerdown", (e) => {
+    if (handlers.locked()) return; // mid-transition: let it land
     canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     interact();
@@ -45,8 +46,8 @@ export function createInput(canvas, camera, handlers) {
       return;
     }
     const p = pointers.get(e.pointerId);
-    const dx = e.clientX - p.x;
-    const dy = e.clientY - p.y;
+    let dx = e.clientX - p.x;
+    let dy = e.clientY - p.y;
     p.x = e.clientX;
     p.y = e.clientY;
 
@@ -57,6 +58,9 @@ export function createInput(canvas, camera, handlers) {
       pinch = next;
       handlers.onMove();
     } else if (drag) {
+      const axis = handlers.dragAxis();
+      if (axis === "x") dy = 0;
+      else if (axis === "y") dx = 0;
       const now = performance.now();
       const dt = Math.max(1, now - drag.last);
       drag.last = now;
@@ -75,7 +79,9 @@ export function createInput(canvas, camera, handlers) {
     if (drag && pointers.size === 0) {
       canvas.classList.remove("dragging");
       if (!drag.moved) handlers.onTap(e.clientX, e.clientY);
-      else if (!reduceMotion && performance.now() - drag.last < 80) {
+      else if (handlers.onRelease(drag.vx, drag.vy)) {
+        // the handler owns what happens next: no momentum
+      } else if (!reduceMotion && performance.now() - drag.last < 80) {
         vx = drag.vx;
         vy = drag.vy;
       }
@@ -90,12 +96,16 @@ export function createInput(canvas, camera, handlers) {
     "wheel",
     (e) => {
       e.preventDefault();
-      interact();
+      if (handlers.locked()) return;
       const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? camera.vh : 1;
       if (e.ctrlKey || e.metaKey) {
+        interact();
         const f = Math.exp(-e.deltaY * k * 0.01);
         camera.zoomAt(e.clientX, e.clientY, Math.min(1.5, Math.max(0.67, f)));
+      } else if (handlers.onWheel(e.deltaX * k, e.deltaY * k)) {
+        vx = vy = 0; // the handler owns the motion; don't cancel its flies
       } else {
+        interact();
         camera.panByScreen(-e.deltaX * k, -e.deltaY * k);
       }
       handlers.onMove();
@@ -109,10 +119,10 @@ export function createInput(canvas, camera, handlers) {
     const cx = camera.vw / 2;
     const cy = camera.vh / 2;
     const map = {
-      ArrowLeft: () => camera.panByScreen(step, 0),
-      ArrowRight: () => camera.panByScreen(-step, 0),
-      ArrowUp: () => camera.panByScreen(0, step),
-      ArrowDown: () => camera.panByScreen(0, -step),
+      ArrowLeft: () => handlers.onStep(-1) || camera.panByScreen(step, 0),
+      ArrowRight: () => handlers.onStep(1) || camera.panByScreen(-step, 0),
+      ArrowUp: () => handlers.onStep(-1) || camera.panByScreen(0, step),
+      ArrowDown: () => handlers.onStep(1) || camera.panByScreen(0, -step),
       "+": () => camera.zoomAt(cx, cy, 1.25),
       "=": () => camera.zoomAt(cx, cy, 1.25),
       "-": () => camera.zoomAt(cx, cy, 0.8),
@@ -122,6 +132,7 @@ export function createInput(canvas, camera, handlers) {
     const fn = map[e.key];
     if (!fn) return;
     e.preventDefault();
+    if (handlers.locked()) return; // mid-transition: let it land
     interact();
     fn();
     handlers.onMove();

@@ -1,10 +1,9 @@
 const mod = (a, n) => ((a % n) + n) % n;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-// Zoom lever: css px per world unit at the closest the user can get. A work
-// is 320 world units wide, so 2.5 shows it at most 800 css px across. Every
-// zoom path (wheel, pinch, keyboard, fly-to-focus) clamps to this.
-export const MAX_ZOOM = 2.5;
+// Absolute zoom ceiling (css px per world unit): inspecting a work in the
+// strip. Roaming the canvas uses a tighter, viewport-derived cap (main.js).
+export const MAX_ZOOM = 4;
 
 // The surface bulges toward the viewer like a shallow dome pinned to the
 // screen: content slides over it as you pan. In normalised screen coords
@@ -79,18 +78,28 @@ export class Camera {
     this.zoom = 1;
     this.vw = 1;
     this.vh = 1;
+    // Mode-set zoom limits, on top of the structural minimum below.
+    this.zmin = 0;
+    this.zmax = MAX_ZOOM;
+    // Screen px per world unit of drag, relative to zoom: the dome magnifies
+    // the centre, so roaming compensates; a flat strip drags 1:1.
+    this.panScale = CENTER_SCALE;
   }
 
   resize(vw, vh) {
     this.vw = vw;
     this.vh = vh;
-    this.zoom = clamp(this.zoom, this.minZoom(), MAX_ZOOM);
+    this.zoom = clamp(this.zoom, this.minZoom(), this.zmax);
   }
 
   // Never zoom out past ~1.7 tiles across the longer axis: keeps the number of
   // wrapped copies (and draw calls) bounded.
   minZoom() {
-    return 0.6 * Math.max(this.vw / this.tile.tileW, this.vh / this.tile.tileH);
+    return Math.max(this.zmin, 0.6 * Math.max(this.vw / this.tile.tileW, this.vh / this.tile.tileH));
+  }
+
+  clampZoom() {
+    this.zoom = clamp(this.zoom, this.minZoom(), this.zmax);
   }
 
   wrap() {
@@ -112,12 +121,12 @@ export class Camera {
 
   // Drag feels 1:1 at the centre of the dome, where the surface is magnified.
   panByScreen(dx, dy) {
-    this.x -= dx / (this.zoom * CENTER_SCALE);
-    this.y -= dy / (this.zoom * CENTER_SCALE);
+    this.x -= dx / (this.zoom * this.panScale);
+    this.y -= dy / (this.zoom * this.panScale);
   }
 
   setZoom(z) {
-    this.zoom = clamp(z, this.minZoom(), MAX_ZOOM);
+    this.zoom = clamp(z, this.minZoom(), this.zmax);
   }
 
   // Zoom keeping the world point under (sx, sy) fixed on screen.

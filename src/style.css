@@ -8,7 +8,6 @@
   --raised: #1a1a1a;
   --panel: rgba(5, 5, 5, 0.8);
   --sheet: #fff;   /* loader: sheet colour fills with --bg from the top */
-  --frame: #8c8c8c; /* canvas: base colour of the lit frame around each work */
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --pad: max(14px, env(safe-area-inset-top));
 }
@@ -24,7 +23,6 @@
     --raised: #e6e6e3;
     --panel: rgba(244, 244, 242, 0.85);
     --sheet: #000;
-    --frame: #7c7c7a;
   }
 }
 
@@ -93,6 +91,31 @@ html, body {
 #caption a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--line-strong); }
 #caption a:hover { border-color: var(--fg); }
 #caption a[hidden] { display: none; }
+
+/* view switch: globe (the canvas) or strip (one work at a time) */
+#mode {
+  position: absolute;
+  top: var(--pad);
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  pointer-events: auto;
+}
+#mode button {
+  all: unset;
+  display: grid;
+  place-items: center;
+  padding: 5px 10px;
+  color: var(--dim);
+  cursor: pointer;
+}
+#mode button + button { border-left: 1px solid var(--line); }
+#mode button:hover { color: var(--fg); }
+#mode button:focus-visible { outline: 1px solid var(--fg); outline-offset: -1px; }
+#mode button[aria-pressed="true"] { color: var(--fg); background: var(--raised); }
+#mode svg { display: block; }
 
 /* admin bar (only rendered with ?admin) */
 #admin {

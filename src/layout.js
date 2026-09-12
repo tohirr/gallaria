@@ -5,11 +5,11 @@
 // gives an even, blue-noise field rather than clumps and voids. Positions
 // are seeded from each work's id, so the arrangement is stable across reloads.
 export const COL_W = 320; // every work is this wide
-export const GAP = 320; // typical breathing room around a work: the works float, they don't tile
+export const GAP = 220; // typical breathing room around a work: the works float, they don't tile
 export const BLOCK = 8; // world units per dissolve block
 
-const MIN_GAP = GAP / 2; // no two works ever come closer than this
-const FILL = 0.55; // fraction of the tile covered by works plus their breathing room
+export const MIN_GAP = GAP / 2; // no two works ever come closer than this
+const FILL = 0.65; // fraction of the tile covered by works plus their breathing room
 const CANDIDATES = 40; // spots tried per work; the clearest valid one wins
 const MAX_TRIES = 400; // give up on a tile this tight and grow it
 
